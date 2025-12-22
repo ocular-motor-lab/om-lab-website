@@ -6,7 +6,7 @@ function renderNavigation(currentPage) {
     // Define the structure of the navigation links
     const navItems = [
         { href: 'index.html', title: 'Home' },
-        { href: 'publications.html', title: 'Publications/Data/Code' },
+        { href: 'publications.html', title: 'Publications' },
         { href: 'people.html', title: 'People' },
     ];
 

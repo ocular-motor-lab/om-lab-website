@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Research Insight Network</title>
+    <link rel="icon" type="image/png" href="images/favicon.png">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            background: #0f172a;
+            color: #f1f5f9;
+        }
+
+        #viz {
+            flex-grow: 1;
+            cursor: grab;
+        }
+
+        #viz:active {
+            cursor: grabbing;
+        }
+
+        #side-panel {
+            width: 380px;
+            background: #1e293b;
+            padding: 30px;
+            border-left: 1px solid #334155;
+            overflow-y: auto;
+            box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .node {
+            stroke: #0f172a;
+            stroke-width: 1.5px;
+            cursor: pointer;
+        }
+
+        .link {
+            stroke: #475569;
+            stroke-opacity: 0.3;
+            stroke-width: 1px;
+        }
+
+        .category-label {
+            font-size: 13px;
+            font-weight: 800;
+            fill: #f8fafc;
+            pointer-events: none;
+            text-transform: uppercase;
+            text-shadow: 0 0 4px #000;
+        }
+
+        h2 {
+            color: #D7DF21;
+            margin-top: 10px;
+            line-height: 1.2;
+            font-size: 1.5em;
+        }
+
+        .insight-box {
+            background: #334155;
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid #D7DF21;
+            margin-top: 20px;
+            line-height: 1.6;
+            color: #e2e8f0;
+        }
+
+        .meta {
+            font-size: 0.8em;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .authors-list {
+            color: #cbd5e1;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 15px;
+            font-size: 0.95em;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #D7DF21;
+            color: #000000;
+            text-decoration: none;
+            border-radius: 6px;
+            margin-top: 20px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .btn:hover {
+            background: #0369a1;
+        }
+
+        .placeholder-text {
+            text-align: center;
+            margin-top: 100px;
+            color: #64748b;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="viz"></div>
+    <div id="side-panel">
+        <div id="detail-content">
+            <div class="placeholder-text">
+                <h3>Drag hubs (big circles) to reorganize the map.<br>Click the nodes to learn about publications.</h3>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const width = window.innerWidth - 380;
+        const height = window.innerHeight;
+
+        const svg = d3.select("#viz").append("svg")
+            .attr("width", width)
+            .attr("height", height)
+            .call(d3.zoom().scaleExtent([0.2, 5]).on("zoom", (e) => container.attr("transform", e.transform)))
+            .on("dblclick.zoom", null); // Disable dblclick zoom to use it for releasing nodes
+
+        const container = svg.append("g");
+
+        d3.csv("publications.csv").then(rawData => {
+            const data = rawData.filter(d => d.type.toLowerCase() !== 'abstract');
+            const nodes = [];
+            const links = [];
+            const categoriesMap = new Map();
+
+            data.forEach((d, i) => {
+                const paperId = "p" + i;
+                nodes.push({
+                    id: paperId, type: "paper", title: d.title, authors: d.authors,
+                    insight: d.description || "No insight available.", year: d.year,
+                    journal: d.journal, pType: d.type, link: d.link_to_paper || "#"
+                });
+                const cats = d.research_category.split(',').map(c => c.trim());
+                cats.forEach(cat => {
+                    categoriesMap.set(cat, (categoriesMap.get(cat) || 0) + 1);
+                    links.push({ source: cat, target: paperId });
+                });
+            });
+
+            categoriesMap.forEach((count, name) => {
+                nodes.push({ id: name, type: "category", count: count });
+            });
+
+            const simulation = d3.forceSimulation(nodes)
+                .force("link", d3.forceLink(links).id(d => d.id).distance(50))
+                .force("charge", d3.forceManyBody().strength(-150))
+                .force("center", d3.forceCenter(width / 2, height / 2))
+                .force("x", d3.forceX(width / 2).strength(0.05))
+                .force("y", d3.forceY(height / 2).strength(0.05))
+                .force("collide", d3.forceCollide().radius(d => d.type === "category" ? 50 : 15));
+
+            const link = container.append("g").selectAll("line")
+                .data(links).enter().append("line").attr("class", "link");
+
+            // Define Drag Behavior
+            const drag = d3.drag()
+                .on("start", (event, d) => {
+                    if (!event.active) simulation.alphaTarget(0.3).restart();
+                    d.fx = d.x;
+                    d.fy = d.y;
+                })
+                .on("drag", (event, d) => {
+                    d.fx = event.x;
+                    d.fy = event.y;
+                })
+                .on("end", (event, d) => {
+                    if (!event.active) simulation.alphaTarget(0);
+                    // Comment the lines below if you want nodes to snap back 
+                    // instead of staying where you dropped them:
+                    // d.fx = null;
+                    // d.fy = null;
+                });
+
+            const node = container.append("g").selectAll("circle")
+                .data(nodes).enter().append("circle")
+                .attr("class", "node")
+                .attr("r", d => d.type === "category" ? 18 + (d.count * 0.3) : 7)
+                .attr("fill", d => d.type === "category" ? "#38bdf8" : "#94a3b8")
+                .call(drag)
+                .on("click", (e, d) => { if (d.type === "paper") showDetail(d); })
+                .on("dblclick", (e, d) => { // Reset fixed position on double click
+                    d.fx = null;
+                    d.fy = null;
+                });
+
+            const labels = container.append("g").selectAll("text")
+                .data(nodes.filter(d => d.type === "category")).enter()
+                .append("text")
+                .attr("class", "category-label")
+                .text(d => d.id);
+
+            simulation.on("tick", () => {
+                link.attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+                    .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+                node.attr("cx", d => d.x).attr("cy", d => d.y);
+                labels.attr("x", d => d.x + 25).attr("y", d => d.y + 5);
+            });
+
+            function showDetail(d) {
+                d3.select("#detail-content").html(`
+                    <div class="meta">${d.pType} • ${d.year}</div>
+                    <h2>${d.title}</h2>
+                    <div class="authors-list">${d.authors}</div>
+                    <div class="insight-box">
+                        <strong style="color:#38bdf8; font-size:0.8em; letter-spacing:1px;">SCIENTIFIC INSIGHT</strong><br>
+                        ${d.insight}
+                    </div>
+                    ${d.link !== "#" ? `<a href="${d.link}" target="_blank" class="btn">View Publication</a>` : ""}
+                `);
+
+                node.transition().duration(200)
+                    .attr("fill", n => n.id === d.id ? "#fff" : (n.type === "category" ? "#38bdf8" : "#94a3b8"))
+                    .attr("stroke", n => n.id === d.id ? "#38bdf8" : "#0f172a")
+                    .attr("stroke-width", n => n.id === d.id ? 3 : 1.5);
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Ocular-Motor lab at UC Berkeley: We study eye movements and vision.">
+  <title>Ocular-Motor lab - Home</title>
+  <!-- Load Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Import style configuration -->
+  <script src="tailwind-config.js"></script>
+  <!-- Import the external navigation script -->
+  <script src="nav.js"></script>
+</head>
+
+<body class="bg-gray-100 min-h-screen font-sans antialiased">
+
+  <a href="#main-content"
+    class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:rounded-lg focus:bg-white focus:text-nav-blue focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-accent-blue">
+    Skip to main content
+  </a>
+
+
+  <!-- 
+        The Navigation Bar and the H-16 Spacer are now dynamically inserted here 
+        by the renderNavigation() function from nav.js on window load.
+    -->
+
+  <main id="main-content" role="main">
+    <!-- Hero Image Section -->
+    <section class="bg-gray-100">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-2">
+        <div class="bg-white rounded-2xl shadow-lifted border border-gray-200 overflow-hidden">
+          <div class="flex flex-col md:flex-row items-center">
+
+            <!-- Left: Image -->
+            <div class="w-full md:w-1/2 flex items-center justify-center p-6 md:p-10">
+              <img src="images/bay.png" alt="Illustration of an eye" class="w-full max-h-72 md:max-h-80 object-contain"
+                loading="eager" decoding="async">
+            </div>
+
+            <!-- Right: Text -->
+            <div class="w-full md:w-1/2 p-6 md:p-10 text-center md:text-left">
+              <h1
+                class="text-nav-blue text-lg sm:text-xl lg:text-2xl font-medium leading-snug max-w-xl mx-auto md:mx-0">
+                We study eye movements and vision. How we control our eyes and how measuring eye movements can help
+                diagnose.
+              </h1>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- Main Content Container for Research Areas -->
+    <div class="max-w-7xl mx-auto pt-4 sm:pt-6 lg:pt-8 pb-2 sm:pb-3 lg:pb-4">
+
+      <!-- Research Areas Preview Section -->
+      <section class="py-8">
+        <!-- Heading is already a good h2 -->
+        <h2 class="text-2xl font-bold text-center text-gray-800 mb-6 border-b-4 inline-block pb-1 mx-auto">Our research
+          areas include...</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <!-- Research Card 1: Headings are h3, which is correct nesting -->
+          <div
+            class="bg-white rounded-2xl shadow-lifted border border-gray-200 transition duration-300 hover:shadow-2xl hover:-translate-y-1">
+            <img src="images/ocular_motor_control.png" alt="Illustration of ocular motor control"
+              class="w-full h-48 object-cover rounded-t-2xl">
+            <div class="p-6">
+              <h3 class="text-xl font-bold text-gray-900 mb-3 border-b pb-2">Ocular motor control</h3>
+              <p class="text-gray-700 leading-relaxed">
+                The ocular motor system is a beautiful model to study the brain.
+                It contains examples of highly compartmentalized functions like the vestibular ocular
+                reflex but also widespread networks that collaborate to decide where to look next or
+                follow a moving target. We are interested in understanding how we move our eyes and why we do it the way
+                we do it.
+              </p>
+            </div>
+          </div>
+
+          <!-- Research Card 2 -->
+          <div
+            class="bg-white rounded-2xl shadow-lifted border border-gray-200 transition duration-300 hover:shadow-2xl hover:-translate-y-1">
+            <img src="images/vision_while_moving.png" alt="Illustration of vision while moving"
+              class="w-full h-48 object-cover rounded-t-2xl">
+            <div class="p-6">
+              <h3 class="text-xl font-bold text-gray-900 mb-3 border-b pb-2">Vision while moving</h3>
+              <p class="text-gray-700 leading-relaxed">
+                If we could record a video of what our eyes see while we move around in the world,
+                we would see an image that continuously moves, rotate, and jumps from place to place.
+                Despite all that motion our perception of the world around us is stable. In the lab
+                we are interested in understanding how our brain achieves this by studying visual perception
+                in the presence of eye and head rotations around their three axes: yaw, pitch, and roll.
+              </p>
+            </div>
+          </div>
+
+          <!-- Research Card 3 -->
+          <div
+            class="bg-white rounded-2xl shadow-lifted border border-gray-200 transition duration-300 hover:shadow-2xl hover:-translate-y-1">
+            <img src="images/measuring_eye_movements.gif" alt="Illustration of eye movement measurement"
+              class="w-full h-48 object-cover rounded-t-2xl">
+            <div class="p-6">
+              <h3 class="text-xl font-bold text-gray-900 mb-3 border-b pb-2">Measuring eye movements</h3>
+              <p class="text-gray-700 leading-relaxed">
+                Precisely and accurately measuring eye movements is critical for many fields of research, for clinical
+                diagnosis, and more recently also for consumer applications. We are interested in developing new methods
+                to measure and analyze all aspects of eye movements, for example, torsional eye position. We also want
+                to
+                understand the biases, artifacts, and limitations of current devices and methods to record eye position.
+                Disorders affecting vision, cognition, motor control, or our balance sensation will cause some
+                abnormality
+                in the eye movements of the patient.
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <div class="mt-4 text-center">
+        <p class="text-lg sm:text-xl font-medium text-gray-800">
+          For information about research opportunities and all other inquries,
+          please contact
+          <a href="mailto:jom@berkeley.edu" aria-label="Email Jorge Otero-Millan"
+            class="text-accent-text hover:underline font-semibold focus:outline-none focus:ring-2 focus:ring-accent-blue focus:ring-offset-2 rounded-sm">
+            jom@berkeley.edu
+          </a>
+        </p>
+      </div>
+    </div>
+
+
+  </main>
+
+  <footer class="bg-white border-t border-gray-100 mt-auto py-6">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <p class="text-sm text-gray-500">
+        Original design by <a href="https://www.emilyacooper.org/" target="_blank" rel="noopener noreferrer"
+          class="text-gray-600 hover:text-accent-blue transition-colors">Emily Cooper</a>
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    // Call the render function to inject the navigation bar when the page is ready
+    window.onload = function () {
+      // This function is now defined in nav.js
+      renderNavigation('index.html');
+    };
+  </script>
+</body>
+
+</html>

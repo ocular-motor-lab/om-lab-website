@@ -260,8 +260,8 @@
 
             // Fixed World origins
             const Apex = new THREE.Vector3(posX, 0, APEX_Z);
-            const Trochlea = new THREE.Vector3(posX + (isLeft ? 2.5 : -2.5), 3, -2);
-            const IO_Origin = new THREE.Vector3(posX + (isLeft ? 2 : -2), -3.5, -1);
+            const Trochlea = new THREE.Vector3(posX + (isLeft ? 2.5 : -2.5), 3, 2);
+            const IO_Origin = new THREE.Vector3(posX + (isLeft ? 2 : -2), -3.5, 1);
 
             for (let id in eye.muscles) {
                 const m = eye.muscles[id];
@@ -284,7 +284,7 @@
 
                 const curve = new THREE.CatmullRomCurve3(points);
                 m.tube.geometry.dispose();
-                m.tube.geometry = new THREE.TubeGeometry(curve, 10, 0.12, 8, false);
+                m.tube.geometry = new THREE.TubeGeometry(curve, 3, 0.22, 8, false);
                 m.tube.visible = state.showMuscles;
 
                 if (state.showLabels) {

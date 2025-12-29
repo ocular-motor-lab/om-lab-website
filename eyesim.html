@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bio-Medical Ocular Simulator</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #020202; font-family: 'Segoe UI', sans-serif; }
+        #overlay { position: absolute; top: 20px; left: 20px; color: white; pointer-events: none; z-index: 100; }
+        .label { color: #fff; font-size: 11px; font-weight: bold; background: rgba(0,0,0,0.8); padding: 2px 5px; border-radius: 3px; border: 1px solid #444; }
+        #instructions { position: absolute; bottom: 20px; width: 100%; text-align: center; color: #666; font-size: 0.8em; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+<div id="overlay">
+    <h2 style="margin:0">Ocular Dynamics Simulator</h2>
+    <p id="status" style="color: #00ffcc; margin: 5px 0 0 0;">Pathology: Normal</p>
+</div>
+<div id="instructions">CLICK TO TRIGGER SACCADE &bull; DRAG TO ORBIT CAMERA</div>
+
+<script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+            "lil-gui": "https://cdn.jsdelivr.net/npm/lil-gui@0.19/+esm"
+        }
+    }
+</script>
+
+<script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+    import GUI from 'lil-gui';
+
+    const state = {
+        pathology: 'Normal',
+        side: 'Right',
+        nystagmus: false,
+        nystagmusPower: 1.5,
+        showLabels: true,
+        showMuscles: true
+    };
+
+    const GLOBE_RADIUS = 2.5;
+    const APEX_Z = -22;
+
+    // --- Scene Setup ---
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 5, 25);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    const labelRenderer = new CSS2DRenderer();
+    labelRenderer.setSize(window.innerWidth, window.innerHeight);
+    labelRenderer.domElement.style.position = 'absolute';
+    labelRenderer.domElement.style.top = '0px';
+    labelRenderer.domElement.style.pointerEvents = 'none';
+    document.body.appendChild(labelRenderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.5);
+    sun.position.set(10, 10, 15);
+    scene.add(sun);
+
+    // --- Dynamic Texture Generation (Fixes Iris Disappearing) ---
+    function generateEyeTexture(color) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 1024; canvas.height = 512;
+        const ctx = canvas.getContext('2d');
+
+        // White Sclera
+        ctx.fillStyle = '#fdfdfd';
+        ctx.fillRect(0, 0, 1024, 512);
+
+        // Center of the texture (Cornea area)
+        const cx = 512, cy = 256;
+
+        // Limbal Ring (Outer Edge of Iris)
+        ctx.beginPath();
+        ctx.arc(cx, cy, 120, 0, Math.PI * 2);
+        ctx.fillStyle = '#000';
+        ctx.fill();
+
+        // Iris
+        const grad = ctx.createRadialGradient(cx, cy, 30, cx, cy, 120);
+        grad.addColorStop(0, color);
+        grad.addColorStop(1, '#001133');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 115, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Radial Fibers
+        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+        for(let i=0; i<300; i++) {
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            const ang = Math.random() * Math.PI * 2;
+            const len = 40 + Math.random() * 80;
+            ctx.lineTo(cx + Math.cos(ang)*len, cy + Math.sin(ang)*len);
+            ctx.stroke();
+        }
+
+        // Pupil
+        ctx.beginPath();
+        ctx.arc(cx, cy, 45, 0, Math.PI * 2);
+        ctx.fillStyle = '#000';
+        ctx.fill();
+
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.offset.set(0, 0);
+        return tex;
+    }
+
+    // --- Eye Creation ---
+    function createEye(side) {
+        const isLeft = side === 'Left';
+        const group = new THREE.Group();
+        const pivot = new THREE.Group(); // Master rotation pivot
+        
+        // Globe Mesh
+        const globeGeo = new THREE.SphereGeometry(GLOBE_RADIUS, 64, 64);
+        const globeMat = new THREE.MeshStandardMaterial({ 
+            map: generateEyeTexture(isLeft ? '#2255aa' : '#664422'),
+            roughness: 0.4 
+        });
+        const globe = new THREE.Mesh(globeGeo, globeMat);
+        globe.rotation.y = -Math.PI / 2; // Align texture to front
+        pivot.add(globe);
+
+        // Cornea Bulge (Transparent)
+        const corneaGeo = new THREE.SphereGeometry(1.0, 32, 32, 0, Math.PI*2, 0, 0.6);
+        const corneaMat = new THREE.MeshPhysicalMaterial({ 
+            transmission: 1, opacity: 0.3, transparent: true, roughness: 0.05, thickness: 0.2 
+        });
+        const cornea = new THREE.Mesh(corneaGeo, corneaMat);
+        cornea.rotation.x = Math.PI/2;
+        cornea.position.z = 2.1;
+        pivot.add(cornea);
+
+        group.add(pivot);
+
+        // Muscle Anchors (Parented to Pivot so they move with the eye)
+        const anchors = {};
+        const muscleData = [
+            { id: 'SR', color: 0xcc4444, pos: new THREE.Vector3(0, 2.1, 1.2) },
+            { id: 'IR', color: 0xcc4444, pos: new THREE.Vector3(0, -2.1, 1.2) },
+            { id: 'MR', color: 0xcc4444, pos: new THREE.Vector3(isLeft ? 2.1 : -2.1, 0, 1.2) },
+            { id: 'LR', color: 0xcc4444, pos: new THREE.Vector3(isLeft ? -2.1 : 2.1, 0, 1.2) },
+            { id: 'SO', color: 0x44cc44, pos: new THREE.Vector3(isLeft ? -1.8 : 1.8, 1.8, -1.2) },
+            { id: 'IO', color: 0x4444cc, pos: new THREE.Vector3(isLeft ? -1.8 : 1.8, -1.8, -1.2) }
+        ];
+
+        const muscles = {};
+        muscleData.forEach(d => {
+            // Anchor point object
+            const anchor = new THREE.Object3D();
+            anchor.position.copy(d.pos);
+            pivot.add(anchor);
+            anchors[d.id] = anchor;
+
+            // Tube mesh
+            const mat = new THREE.MeshStandardMaterial({ color: d.color, roughness: 0.7 });
+            const tube = new THREE.Mesh(new THREE.BufferGeometry(), mat);
+            
+            const div = document.createElement('div');
+            div.className = 'label';
+            div.textContent = d.id;
+            const label = new CSS2DObject(div);
+            
+            scene.add(tube);
+            muscles[d.id] = { tube, label, anchor: anchor };
+        });
+
+        return { side, group, pivot, muscles };
+    }
+
+    const leftEye = createEye('Left');
+    leftEye.group.position.x = -5;
+    const rightEye = createEye('Right');
+    rightEye.group.position.x = 5;
+    scene.add(leftEye.group, rightEye.group);
+
+    // --- Fast Target Logic ---
+    const target = new THREE.Mesh(new THREE.SphereGeometry(0.3), new THREE.MeshBasicMaterial({color: 0xff0000}));
+    const targetPos = new THREE.Vector3(0, 0, 20);
+    target.position.copy(targetPos);
+    scene.add(target);
+
+    const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -20);
+    const raycaster = new THREE.Raycaster();
+
+    window.addEventListener('mousedown', (e) => {
+        const mouse = new THREE.Vector2((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
+        raycaster.setFromCamera(mouse, camera);
+        const intersect = new THREE.Vector3();
+        if (raycaster.ray.intersectPlane(plane, intersect)) {
+            targetPos.copy(intersect); // Immediate set
+        }
+    });
+
+    // --- Animation Loop ---
+    function updateMuscles(eye) {
+        const isLeft = eye.side === 'Left';
+        const posX = eye.group.position.x;
+
+        // Fixed World origins
+        const Apex = new THREE.Vector3(posX, 0, APEX_Z);
+        const Trochlea = new THREE.Vector3(posX + (isLeft ? 2.5 : -2.5), 3, -2);
+        const IO_Origin = new THREE.Vector3(posX + (isLeft ? 2 : -2), -3.5, -1);
+
+        for (let id in eye.muscles) {
+            const m = eye.muscles[id];
+            
+            // Get current insertion point in world space
+            const worldIns = new THREE.Vector3();
+            m.anchor.getWorldPosition(worldIns);
+            
+            let points = [];
+            if (id === 'SO') {
+                points = [worldIns, Trochlea, Apex];
+            } else if (id === 'IO') {
+                points = [worldIns, IO_Origin];
+            } else {
+                // Rectus Wrap Logic: calculate mid-point hugging the globe
+                const mid = worldIns.clone().lerp(Apex, 0.25);
+                const wrapPt = mid.clone().sub(eye.group.position).normalize().multiplyScalar(GLOBE_RADIUS + 0.1).add(eye.group.position);
+                points = [worldIns, wrapPt, Apex];
+            }
+
+            const curve = new THREE.CatmullRomCurve3(points);
+            m.tube.geometry.dispose();
+            m.tube.geometry = new THREE.TubeGeometry(curve, 10, 0.12, 8, false);
+            m.tube.visible = state.showMuscles;
+
+            if (state.showLabels) {
+                m.label.position.copy(points[0].clone().lerp(points[1] || points[0], 0.3));
+                if (!m.label.parent) scene.add(m.label);
+            } else if (m.label.parent) scene.remove(m.label);
+        }
+    }
+
+    function calculateMotion(eye, time) {
+        const localTarget = target.position.clone().sub(eye.group.position);
+        const lookMat = new THREE.Matrix4().lookAt(localTarget, new THREE.Vector3(0,0,0), new THREE.Vector3(0,1,0));
+        const targetQuat = new THREE.Quaternion().setFromRotationMatrix(lookMat);
+        const euler = new THREE.Euler().setFromQuaternion(targetQuat, 'YXZ');
+
+        const isAffected = (state.side === 'Both' || state.side === eye.side);
+
+        if (isAffected && state.pathology !== 'Normal') {
+            if (state.pathology === 'CN6 Palsy') {
+                if (eye.side === 'Left') euler.y = Math.max(0, euler.y);
+                if (eye.side === 'Right') euler.y = Math.min(0, euler.y);
+            } else if (state.pathology === 'CN3 Palsy') {
+                euler.set(0.4, (eye.side === 'Left' ? -0.5 : 0.5), 0);
+            } else if (state.pathology === 'CN4 Palsy') {
+                if ((eye.side === 'Left' && euler.y > 0) || (eye.side === 'Right' && euler.y < 0)) euler.x -= 0.25;
+            } else if (state.pathology === 'INO') {
+                if (eye.side === 'Left') euler.y = Math.min(0, euler.y);
+                if (eye.side === 'Right') euler.y = Math.max(0, euler.y);
+            }
+        }
+
+        if (state.nystagmus) {
+            const beat = (time * 5) % 1;
+            euler.y += Math.pow(beat, 5) * 0.4 * state.nystagmusPower;
+        }
+
+        const currentQuat = new THREE.Quaternion().setFromEuler(euler);
+        eye.pivot.quaternion.slerp(currentQuat, 0.3); // High speed snap
+    }
+
+    function animate(t) {
+        t *= 0.001;
+        requestAnimationFrame(animate);
+
+        // Fast target lerp
+        target.position.lerp(targetPos, 0.4);
+
+        calculateMotion(leftEye, t);
+        calculateMotion(rightEye, t);
+
+        updateMuscles(leftEye);
+        updateMuscles(rightEye);
+
+        controls.update();
+        renderer.render(scene, camera);
+        labelRenderer.render(scene, camera);
+    }
+
+    // --- GUI ---
+    const gui = new GUI();
+    gui.add(state, 'pathology', ['Normal', 'CN3 Palsy', 'CN4 Palsy', 'CN6 Palsy', 'INO']).name('Condition').onChange(v => {
+        document.getElementById('status').textContent = `Pathology: ${v}`;
+    });
+    gui.add(state, 'side', ['Left', 'Right', 'Both']).name('Affected Side');
+    gui.add(state, 'nystagmus').name('Enable Nystagmus');
+    gui.add(state, 'nystagmusPower', 0.5, 3.0).name('Power');
+    gui.add(state, 'showLabels').name('Show Labels');
+
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        labelRenderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    animate(0);
+</script>
+</body>
+</html>

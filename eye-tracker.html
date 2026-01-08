@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eye Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-dark: #0a0a0f;
+            --bg-surface: #12121a;
+            --accent-cyan: #00f5d4;
+            --accent-magenta: #f72585;
+            --accent-violet: #7b2cbf;
+            --text-primary: #ffffff;
+            --text-secondary: #8888aa;
+            --glow-cyan: 0 0 30px rgba(0, 245, 212, 0.4);
+            --glow-magenta: 0 0 30px rgba(247, 37, 133, 0.4);
+        }
+
+        body {
+            font-family: 'Syne', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Animated background grid */
+        .bg-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 245, 212, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 245, 212, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Gaze cursor */
+        #gaze-cursor {
+            position: fixed;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--accent-cyan) 0%, transparent 70%);
+            border: 2px solid var(--accent-cyan);
+            box-shadow: var(--glow-cyan), inset 0 0 15px rgba(0, 245, 212, 0.3);
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #gaze-cursor.active {
+            opacity: 1;
+        }
+
+        #gaze-cursor::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 8px;
+            height: 8px;
+            background: var(--accent-cyan);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        #gaze-cursor::after {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            right: -10px;
+            bottom: -10px;
+            border: 1px solid rgba(0, 245, 212, 0.3);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 0; }
+        }
+
+        /* Screens */
+        .screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        .screen.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Welcome Screen */
+        #welcome-screen {
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #1a1a2e 100%);
+        }
+
+        .logo {
+            font-size: 4rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 60px rgba(0, 245, 212, 0.3);
+        }
+
+        .subtitle {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .btn {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            padding: 1rem 2.5rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-violet));
+            color: var(--bg-dark);
+            box-shadow: var(--glow-cyan);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0 50px rgba(0, 245, 212, 0.6);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--accent-cyan);
+            border: 2px solid var(--accent-cyan);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0, 245, 212, 0.1);
+        }
+
+        /* Camera preview */
+        #camera-preview {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 200px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid var(--accent-cyan);
+            box-shadow: var(--glow-cyan);
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #camera-preview.visible {
+            opacity: 1;
+        }
+
+        /* Calibration Screen */
+        #calibration-screen {
+            background: var(--bg-dark);
+        }
+
+        .calibration-info {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 20;
+        }
+
+        .calibration-info h2 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: var(--accent-cyan);
+        }
+
+        .calibration-info p {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .progress-bar {
+            width: 300px;
+            height: 6px;
+            background: var(--bg-surface);
+            border-radius: 3px;
+            margin-top: 1rem;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-magenta));
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .calibration-point {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .calibration-point.active {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .calibration-point::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            background: var(--accent-magenta);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: var(--glow-magenta);
+        }
+
+        .calibration-point::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 2px solid var(--accent-magenta);
+            border-radius: 50%;
+            animation: calibrationPulse 1s infinite;
+        }
+
+        @keyframes calibrationPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.5); opacity: 0; }
+        }
+
+        .calibration-point .click-count {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--accent-cyan);
+        }
+
+        /* Tracking Screen */
+        #tracking-screen {
+            background: var(--bg-dark);
+        }
+
+        .tracking-hud {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 2rem;
+            padding: 1rem 2rem;
+            background: rgba(18, 18, 26, 0.9);
+            border: 1px solid rgba(0, 245, 212, 0.2);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            z-index: 50;
+        }
+
+        .hud-item {
+            text-align: center;
+        }
+
+        .hud-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.3rem;
+        }
+
+        .hud-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            color: var(--accent-cyan);
+        }
+
+        .controls {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            display: flex;
+            gap: 1rem;
+            z-index: 50;
+        }
+
+        .control-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 2px solid rgba(0, 245, 212, 0.3);
+            background: rgba(18, 18, 26, 0.8);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .control-btn:hover {
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+            box-shadow: var(--glow-cyan);
+        }
+
+        /* Heatmap overlay */
+        #heatmap-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+            opacity: 0.6;
+        }
+
+        /* Status indicator */
+        .status-indicator {
+            position: fixed;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(18, 18, 26, 0.9);
+            border-radius: 20px;
+            border: 1px solid rgba(0, 245, 212, 0.2);
+            z-index: 50;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            animation: statusPulse 2s infinite;
+        }
+
+        @keyframes statusPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .status-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* Info panel */
+        .info-panel {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            width: 280px;
+            padding: 1.5rem;
+            background: rgba(18, 18, 26, 0.95);
+            border: 1px solid rgba(0, 245, 212, 0.2);
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            z-index: 50;
+            opacity: 0;
+            transform: translateX(20px);
+            transition: all 0.3s ease;
+        }
+
+        .info-panel.visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .info-panel h3 {
+            font-size: 1rem;
+            color: var(--accent-cyan);
+            margin-bottom: 1rem;
+        }
+
+        .info-panel p {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Loading state */
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 3px solid rgba(0, 245, 212, 0.1);
+            border-top-color: var(--accent-cyan);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1.5rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* WebGazer video styling override */
+        #webgazerVideoContainer {
+            display: none !important;
+        }
+
+        #webgazerVideoFeed {
+            width: 100% !important;
+            height: auto !important;
+            border-radius: 10px;
+        }
+
+        #webgazerFaceOverlay, #webgazerFaceFeedbackBox {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    
+    <!-- Gaze cursor -->
+    <div id="gaze-cursor"></div>
+    
+    <!-- Camera preview -->
+    <div id="camera-preview"></div>
+    
+    <!-- Heatmap canvas -->
+    <canvas id="heatmap-canvas"></canvas>
+    
+    <!-- Welcome Screen -->
+    <div id="welcome-screen" class="screen active">
+        <h1 class="logo">EyeTrack</h1>
+        <p class="subtitle">Webcam-Based Gaze Detection</p>
+        <button id="start-btn" class="btn btn-primary">Start Calibration</button>
+        <div style="margin-top: 2rem;">
+            <p style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-secondary); max-width: 400px; text-align: center; line-height: 1.6;">
+                This app uses your webcam to track eye movements.<br>
+                Good lighting and a stable head position improve accuracy.
+            </p>
+        </div>
+    </div>
+    
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="screen">
+        <div class="loading-spinner"></div>
+        <p class="subtitle">Initializing Camera...</p>
+    </div>
+    
+    <!-- Calibration Screen -->
+    <div id="calibration-screen" class="screen">
+        <div class="calibration-info">
+            <h2>Calibration</h2>
+            <p>Click each point 5 times while looking at it</p>
+            <div class="progress-bar">
+                <div class="progress-fill" id="calibration-progress"></div>
+            </div>
+        </div>
+        <div id="calibration-points"></div>
+    </div>
+    
+    <!-- Tracking Screen -->
+    <div id="tracking-screen" class="screen">
+        <div class="status-indicator">
+            <div class="status-dot"></div>
+            <span class="status-text">Tracking Active</span>
+        </div>
+        
+        <div class="controls">
+            <button class="control-btn" id="recalibrate-btn" title="Recalibrate">↻</button>
+            <button class="control-btn" id="heatmap-btn" title="Toggle Heatmap">◉</button>
+            <button class="control-btn" id="info-btn" title="Info">?</button>
+        </div>
+        
+        <div class="tracking-hud">
+            <div class="hud-item">
+                <div class="hud-label">X Position</div>
+                <div class="hud-value" id="gaze-x">--</div>
+            </div>
+            <div class="hud-item">
+                <div class="hud-label">Y Position</div>
+                <div class="hud-value" id="gaze-y">--</div>
+            </div>
+            <div class="hud-item">
+                <div class="hud-label">Screen Region</div>
+                <div class="hud-value" id="gaze-region">--</div>
+            </div>
+        </div>
+        
+        <div class="info-panel" id="info-panel">
+            <h3>Eye Tracking Info</h3>
+            <p>
+                The cyan circle shows your estimated gaze position. 
+                The heatmap displays areas you've looked at most.
+                <br><br>
+                For best results: keep your head still, ensure good lighting, 
+                and stay at a consistent distance from the screen.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Load WebGazer dynamically with fallbacks
+        const webgazerUrls = [
+            'https://webgazer.cs.brown.edu/webgazer.js',
+            'https://cdn.jsdelivr.net/npm/webgazer@2.1.0/dist/webgazer.min.js',
+            'https://unpkg.com/webgazer@2.1.0/dist/webgazer.min.js'
+        ];
+
+        let webgazerLoaded = false;
+
+        async function loadWebGazer() {
+            for (const url of webgazerUrls) {
+                try {
+                    await loadScript(url);
+                    if (typeof webgazer !== 'undefined') {
+                        webgazerLoaded = true;
+                        console.log('WebGazer loaded from:', url);
+                        return true;
+                    }
+                } catch (e) {
+                    console.warn('Failed to load from:', url, e);
+                }
+            }
+            return false;
+        }
+
+        function loadScript(url) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = url;
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+
+        // State management
+        const state = {
+            currentScreen: 'welcome',
+            calibrationComplete: false,
+            gazeHistory: [],
+            heatmapEnabled: true,
+            clicksPerPoint: 5,
+            currentPointIndex: 0,
+            pointClicks: 0,
+            totalPoints: 9
+        };
+
+        // DOM elements
+        const elements = {
+            welcomeScreen: document.getElementById('welcome-screen'),
+            loadingScreen: document.getElementById('loading-screen'),
+            calibrationScreen: document.getElementById('calibration-screen'),
+            trackingScreen: document.getElementById('tracking-screen'),
+            startBtn: document.getElementById('start-btn'),
+            gazeCursor: document.getElementById('gaze-cursor'),
+            cameraPreview: document.getElementById('camera-preview'),
+            calibrationPoints: document.getElementById('calibration-points'),
+            calibrationProgress: document.getElementById('calibration-progress'),
+            gazeX: document.getElementById('gaze-x'),
+            gazeY: document.getElementById('gaze-y'),
+            gazeRegion: document.getElementById('gaze-region'),
+            heatmapCanvas: document.getElementById('heatmap-canvas'),
+            recalibrateBtn: document.getElementById('recalibrate-btn'),
+            heatmapBtn: document.getElementById('heatmap-btn'),
+            infoBtn: document.getElementById('info-btn'),
+            infoPanel: document.getElementById('info-panel')
+        };
+
+        // Heatmap setup
+        const heatmapCtx = elements.heatmapCanvas.getContext('2d');
+        let heatmapData = [];
+
+        function resizeHeatmap() {
+            elements.heatmapCanvas.width = window.innerWidth;
+            elements.heatmapCanvas.height = window.innerHeight;
+        }
+        resizeHeatmap();
+        window.addEventListener('resize', resizeHeatmap);
+
+        // Screen transitions
+        function showScreen(screenName) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(`${screenName}-screen`).classList.add('active');
+            state.currentScreen = screenName;
+        }
+
+        // Initialize WebGazer
+        async function initWebGazer() {
+            showScreen('loading');
+            
+            // First, try to load WebGazer if not already loaded
+            if (typeof webgazer === 'undefined') {
+                const loaded = await loadWebGazer();
+                if (!loaded) {
+                    alert('Could not load the eye tracking library. Please check your internet connection and try again.');
+                    showScreen('welcome');
+                    return;
+                }
+            }
+            
+            try {
+                await webgazer
+                    .setRegression('ridge')
+                    .setGazeListener((data, elapsedTime) => {
+                        if (data == null) return;
+                        updateGaze(data.x, data.y);
+                    })
+                    .begin();
+
+                // Move video to our preview container
+                const video = document.getElementById('webgazerVideoFeed');
+                if (video) {
+                    elements.cameraPreview.appendChild(video);
+                    elements.cameraPreview.classList.add('visible');
+                }
+
+                // Hide WebGazer's default UI
+                webgazer.showVideoPreview(false);
+                webgazer.showPredictionPoints(false);
+                webgazer.showFaceOverlay(false);
+                webgazer.showFaceFeedbackBox(false);
+
+                // Start calibration
+                setTimeout(() => startCalibration(), 500);
+                
+            } catch (error) {
+                console.error('WebGazer initialization failed:', error);
+                alert('Could not access camera. Please ensure camera permissions are granted and try again.');
+                showScreen('welcome');
+            }
+        }
+
+        // Calibration
+        function startCalibration() {
+            showScreen('calibration');
+            state.currentPointIndex = 0;
+            state.pointClicks = 0;
+            
+            // Create calibration points in a 3x3 grid
+            const padding = 100;
+            const positions = [];
+            
+            for (let row = 0; row < 3; row++) {
+                for (let col = 0; col < 3; col++) {
+                    positions.push({
+                        x: padding + (col * ((window.innerWidth - 2 * padding) / 2)),
+                        y: padding + (row * ((window.innerHeight - 2 * padding) / 2))
+                    });
+                }
+            }
+            
+            // Shuffle positions for varied calibration
+            positions.sort(() => Math.random() - 0.5);
+            
+            elements.calibrationPoints.innerHTML = '';
+            positions.forEach((pos, index) => {
+                const point = document.createElement('div');
+                point.className = 'calibration-point';
+                point.style.left = `${pos.x}px`;
+                point.style.top = `${pos.y}px`;
+                point.dataset.index = index;
+                point.innerHTML = `<span class="click-count">0/${state.clicksPerPoint}</span>`;
+                
+                point.addEventListener('click', handleCalibrationClick);
+                elements.calibrationPoints.appendChild(point);
+            });
+            
+            // Show first point
+            showCalibrationPoint(0);
+        }
+
+        function showCalibrationPoint(index) {
+            document.querySelectorAll('.calibration-point').forEach(p => p.classList.remove('active'));
+            const point = document.querySelector(`.calibration-point[data-index="${index}"]`);
+            if (point) {
+                point.classList.add('active');
+            }
+        }
+
+        function handleCalibrationClick(e) {
+            const point = e.currentTarget;
+            const index = parseInt(point.dataset.index);
+            
+            if (index !== state.currentPointIndex) return;
+            
+            state.pointClicks++;
+            point.querySelector('.click-count').textContent = `${state.pointClicks}/${state.clicksPerPoint}`;
+            
+            // Record click for WebGazer training
+            webgazer.recordScreenPosition(
+                parseFloat(point.style.left),
+                parseFloat(point.style.top)
+            );
+            
+            // Update progress
+            const totalClicks = state.currentPointIndex * state.clicksPerPoint + state.pointClicks;
+            const progress = (totalClicks / (state.totalPoints * state.clicksPerPoint)) * 100;
+            elements.calibrationProgress.style.width = `${progress}%`;
+            
+            if (state.pointClicks >= state.clicksPerPoint) {
+                state.currentPointIndex++;
+                state.pointClicks = 0;
+                
+                if (state.currentPointIndex >= state.totalPoints) {
+                    // Calibration complete
+                    finishCalibration();
+                } else {
+                    showCalibrationPoint(state.currentPointIndex);
+                }
+            }
+        }
+
+        function finishCalibration() {
+            state.calibrationComplete = true;
+            elements.gazeCursor.classList.add('active');
+            showScreen('tracking');
+            
+            // Clear heatmap data
+            heatmapData = [];
+        }
+
+        // Gaze tracking
+        function updateGaze(x, y) {
+            if (state.currentScreen !== 'tracking') return;
+            
+            // Smooth the gaze position
+            const smoothing = 0.3;
+            const currentX = parseFloat(elements.gazeCursor.style.left) || x;
+            const currentY = parseFloat(elements.gazeCursor.style.top) || y;
+            
+            const smoothedX = currentX + (x - currentX) * smoothing;
+            const smoothedY = currentY + (y - currentY) * smoothing;
+            
+            // Update cursor position
+            elements.gazeCursor.style.left = `${smoothedX}px`;
+            elements.gazeCursor.style.top = `${smoothedY}px`;
+            
+            // Update HUD
+            elements.gazeX.textContent = Math.round(smoothedX);
+            elements.gazeY.textContent = Math.round(smoothedY);
+            elements.gazeRegion.textContent = getScreenRegion(smoothedX, smoothedY);
+            
+            // Add to heatmap
+            if (state.heatmapEnabled) {
+                heatmapData.push({ x: smoothedX, y: smoothedY, age: 0 });
+                if (heatmapData.length > 500) {
+                    heatmapData.shift();
+                }
+                drawHeatmap();
+            }
+        }
+
+        function getScreenRegion(x, y) {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            
+            const col = x < w / 3 ? 'Left' : x < (2 * w / 3) ? 'Center' : 'Right';
+            const row = y < h / 3 ? 'Top' : y < (2 * h / 3) ? 'Middle' : 'Bottom';
+            
+            return `${row} ${col}`;
+        }
+
+        function drawHeatmap() {
+            heatmapCtx.clearRect(0, 0, elements.heatmapCanvas.width, elements.heatmapCanvas.height);
+            
+            heatmapData.forEach((point, i) => {
+                const alpha = Math.max(0.02, 0.15 - (i / heatmapData.length) * 0.1);
+                const radius = 30;
+                
+                const gradient = heatmapCtx.createRadialGradient(
+                    point.x, point.y, 0,
+                    point.x, point.y, radius
+                );
+                gradient.addColorStop(0, `rgba(0, 245, 212, ${alpha})`);
+                gradient.addColorStop(1, 'rgba(0, 245, 212, 0)');
+                
+                heatmapCtx.fillStyle = gradient;
+                heatmapCtx.beginPath();
+                heatmapCtx.arc(point.x, point.y, radius, 0, Math.PI * 2);
+                heatmapCtx.fill();
+            });
+        }
+
+        // Event listeners
+        elements.startBtn.addEventListener('click', initWebGazer);
+
+        elements.recalibrateBtn.addEventListener('click', () => {
+            webgazer.clearData();
+            startCalibration();
+        });
+
+        elements.heatmapBtn.addEventListener('click', () => {
+            state.heatmapEnabled = !state.heatmapEnabled;
+            elements.heatmapCanvas.style.display = state.heatmapEnabled ? 'block' : 'none';
+            elements.heatmapBtn.style.color = state.heatmapEnabled ? 'var(--accent-cyan)' : 'var(--text-secondary)';
+        });
+
+        elements.infoBtn.addEventListener('click', () => {
+            elements.infoPanel.classList.toggle('visible');
+        });
+
+        // Handle window resize during calibration
+        window.addEventListener('resize', () => {
+            if (state.currentScreen === 'calibration') {
+                startCalibration();
+            }
+        });
+    </script>
+</body>
+</html>

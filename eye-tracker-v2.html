@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neural Gaze Tracker</title>
+    <title>Neural Gaze Tracker v2</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection@1.0.5/dist/face-landmarks-detection.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -38,7 +38,6 @@
             position: relative;
         }
 
-        /* Animated background grid */
         .bg-grid {
             position: fixed;
             top: 0;
@@ -62,7 +61,6 @@
             flex-direction: column;
         }
 
-        /* Header */
         header {
             padding: 20px 40px;
             display: flex;
@@ -146,7 +144,6 @@
             box-shadow: var(--glow-magenta);
         }
 
-        /* Main content */
         main {
             flex: 1;
             display: flex;
@@ -155,7 +152,6 @@
             overflow: hidden;
         }
 
-        /* Video panel */
         .video-panel {
             width: 400px;
             display: flex;
@@ -203,7 +199,6 @@
             transform: scaleX(-1);
         }
 
-        /* Eye crops display */
         .eye-crops {
             display: flex;
             gap: 15px;
@@ -233,7 +228,6 @@
             border-radius: 8px;
         }
 
-        /* Stats panel */
         .stats-panel {
             background: var(--bg-secondary);
             border-radius: 12px;
@@ -267,7 +261,10 @@
             color: var(--accent-cyan);
         }
 
-        /* Tracking area */
+        .stat-value.error {
+            color: var(--accent-magenta);
+        }
+
         .tracking-area {
             flex: 1;
             position: relative;
@@ -303,7 +300,6 @@
             height: 100%;
         }
 
-        /* Gaze cursor */
         #gazeCursor {
             position: fixed;
             width: 40px;
@@ -334,7 +330,6 @@
             box-shadow: var(--glow-cyan);
         }
 
-        /* Calibration overlay */
         #calibrationOverlay {
             position: fixed;
             top: 0;
@@ -400,14 +395,12 @@
             margin-top: 10px;
         }
 
-        /* Calibration point */
+        /* Calibration point with progress ring */
         .calibration-point {
             position: fixed;
-            width: 50px;
-            height: 50px;
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
-            background: var(--accent-magenta);
-            box-shadow: var(--glow-magenta);
             cursor: pointer;
             transform: translate(-50%, -50%) scale(0);
             transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -420,28 +413,75 @@
             transform: translate(-50%, -50%) scale(1);
         }
 
-        .calibration-point::before {
-            content: '';
+        .calibration-point .point-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--accent-magenta);
+            border-radius: 50%;
+            box-shadow: var(--glow-magenta);
+        }
+
+        .calibration-point .point-center {
             position: absolute;
             top: 50%;
             left: 50%;
-            width: 10px;
-            height: 10px;
+            width: 12px;
+            height: 12px;
             background: white;
             border-radius: 50%;
             transform: translate(-50%, -50%);
+            z-index: 2;
         }
 
-        .calibration-point.collecting {
-            animation: collectPulse 0.5s ease-in-out infinite;
+        .calibration-point .progress-ring {
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            width: 70px;
+            height: 70px;
         }
 
-        @keyframes collectPulse {
-            0%, 100% { transform: translate(-50%, -50%) scale(1); }
-            50% { transform: translate(-50%, -50%) scale(1.2); }
+        .calibration-point .progress-ring circle {
+            fill: none;
+            stroke-width: 4;
         }
 
-        /* Buttons */
+        .calibration-point .progress-ring .bg {
+            stroke: rgba(255, 255, 255, 0.2);
+        }
+
+        .calibration-point .progress-ring .progress {
+            stroke: var(--accent-cyan);
+            stroke-linecap: round;
+            transform: rotate(-90deg);
+            transform-origin: center;
+            transition: stroke-dashoffset 0.1s ease;
+        }
+
+        .calibration-point .sample-count {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: white;
+            z-index: 3;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .calibration-point.collecting .sample-count {
+            opacity: 1;
+        }
+
+        .calibration-point.collecting .point-center {
+            opacity: 0;
+        }
+
         .btn {
             font-family: 'Space Grotesk', sans-serif;
             font-size: 1rem;
@@ -482,7 +522,6 @@
             margin-top: 20px;
         }
 
-        /* Control buttons */
         .controls {
             display: flex;
             gap: 10px;
@@ -511,7 +550,6 @@
             border-color: var(--accent-cyan);
         }
 
-        /* Loading state */
         .loading-overlay {
             position: fixed;
             top: 0;
@@ -549,30 +587,6 @@
             color: var(--text-secondary);
         }
 
-        /* Accuracy indicator */
-        .accuracy-ring {
-            width: 80px;
-            height: 80px;
-            margin: 20px auto;
-        }
-
-        /* Heatmap toggle */
-        .heatmap-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .heatmap-overlay.visible {
-            opacity: 0.7;
-        }
-
-        /* Notifications */
         .notification {
             position: fixed;
             bottom: 30px;
@@ -594,12 +608,36 @@
             transform: translateX(-50%) translateY(0);
             opacity: 1;
         }
+
+        /* Debug panel */
+        .debug-panel {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 12px;
+            border: 1px solid rgba(247, 37, 133, 0.3);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            max-height: 100px;
+            overflow-y: auto;
+        }
+
+        .debug-panel .debug-line {
+            padding: 2px 0;
+        }
+
+        .debug-panel .debug-line.error {
+            color: var(--accent-magenta);
+        }
+
+        .debug-panel .debug-line.success {
+            color: var(--accent-cyan);
+        }
     </style>
 </head>
 <body>
     <div class="bg-grid"></div>
     
-    <!-- Loading overlay -->
     <div class="loading-overlay" id="loadingOverlay">
         <div class="loader"></div>
         <div class="loading-text" id="loadingText">Initializing neural networks...</div>
@@ -609,7 +647,7 @@
         <header>
             <div class="logo">
                 <div class="logo-icon"></div>
-                <span class="logo-text">NEURAL GAZE</span>
+                <span class="logo-text">NEURAL GAZE v2</span>
             </div>
             <div class="status-bar">
                 <div class="status-item">
@@ -618,7 +656,11 @@
                 </div>
                 <div class="status-item">
                     <div class="status-dot" id="faceStatus"></div>
-                    <span>Face Detection</span>
+                    <span>Face</span>
+                </div>
+                <div class="status-item">
+                    <div class="status-dot" id="eyeStatus"></div>
+                    <span>Eyes</span>
                 </div>
                 <div class="status-item">
                     <div class="status-dot" id="calibrationStatus"></div>
@@ -673,6 +715,14 @@
                         <span>Calibration Points</span>
                         <span class="stat-value" id="calibPoints">0 / 9</span>
                     </div>
+                    <div class="stat-row">
+                        <span>Feature Status</span>
+                        <span class="stat-value" id="featureStatus">--</span>
+                    </div>
+                </div>
+
+                <div class="debug-panel" id="debugPanel">
+                    <div class="debug-line">Debug log ready...</div>
                 </div>
 
                 <div class="btn-group" style="flex-direction: column;">
@@ -696,13 +746,12 @@
         </main>
     </div>
 
-    <!-- Calibration overlay -->
     <div id="calibrationOverlay">
         <div class="calibration-content">
             <h2 class="calibration-title">Calibration Mode</h2>
             <p class="calibration-subtitle" id="calibInstructions">
                 Look at each point that appears and click it while keeping your gaze fixed on it.
-                The more accurately you follow the points, the better the tracking will be.
+                A progress ring will show collection progress. Keep looking until the point disappears.
             </p>
             <div class="calibration-progress">
                 <div class="progress-bar">
@@ -716,25 +765,23 @@
         </div>
     </div>
 
-    <div class="calibration-point" id="calibPoint"></div>
+    <div class="calibration-point" id="calibPoint">
+        <div class="point-bg"></div>
+        <div class="point-center"></div>
+        <svg class="progress-ring">
+            <circle class="bg" cx="35" cy="35" r="30"></circle>
+            <circle class="progress" cx="35" cy="35" r="30" 
+                    stroke-dasharray="188.5" stroke-dashoffset="188.5"></circle>
+        </svg>
+        <div class="sample-count" id="sampleCounter">0</div>
+    </div>
     
-    <!-- Gaze cursor -->
     <div id="gazeCursor"></div>
-
-    <!-- Notification -->
     <div class="notification" id="notification"></div>
 
     <script>
-        // ===============================
-        // Neural Gaze Tracker
-        // Custom eye tracking without WebGazer
-        // Uses TensorFlow.js for face landmarks
-        // Ridge regression for gaze prediction
-        // ===============================
-
         class GazeTracker {
             constructor() {
-                // DOM elements
                 this.video = document.getElementById('webcam');
                 this.overlay = document.getElementById('overlay');
                 this.overlayCtx = this.overlay.getContext('2d');
@@ -745,55 +792,62 @@
                 this.rightEyeCanvas = document.getElementById('rightEyeCanvas');
                 this.rightEyeCtx = this.rightEyeCanvas.getContext('2d');
                 this.gazeCursor = document.getElementById('gazeCursor');
+                this.debugPanel = document.getElementById('debugPanel');
                 
-                // Model and detector
                 this.faceDetector = null;
                 this.isModelLoaded = false;
                 
-                // Gaze prediction model (Ridge Regression)
                 this.gazeModel = {
                     weightsX: null,
                     weightsY: null,
                     trained: false,
-                    regularization: 1.0
+                    regularization: 0.1
                 };
                 
-                // Training data
                 this.trainingData = {
                     features: [],
                     targetsX: [],
                     targetsY: []
                 };
                 
-                // Calibration state
                 this.calibrationPoints = this.generateCalibrationGrid(3, 3);
                 this.currentCalibPoint = 0;
                 this.isCalibrating = false;
-                this.calibrationSamplesPerPoint = 15;
+                this.calibrationSamplesPerPoint = 20;
                 this.currentPointSamples = 0;
+                this.isCollecting = false;
                 
-                // Tracking state
                 this.isTracking = false;
                 this.currentGaze = { x: 0, y: 0 };
                 this.gazeHistory = [];
                 this.showTrail = false;
                 this.showHeatmap = false;
                 
-                // Performance metrics
                 this.fps = 0;
                 this.frameCount = 0;
                 this.lastFpsUpdate = performance.now();
                 this.inferenceTime = 0;
                 
-                // Smoothing
-                this.smoothingFactor = 0.3;
+                this.smoothingFactor = 0.25;
                 this.smoothedGaze = { x: 0, y: 0 };
                 
-                // Feature extraction settings
                 this.eyeImageSize = 64;
+                this.lastFeatureStatus = '';
                 
-                // Initialize
                 this.init();
+            }
+
+            debug(msg, type = 'info') {
+                const line = document.createElement('div');
+                line.className = 'debug-line ' + type;
+                line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+                this.debugPanel.appendChild(line);
+                this.debugPanel.scrollTop = this.debugPanel.scrollHeight;
+                
+                // Keep only last 20 lines
+                while (this.debugPanel.children.length > 20) {
+                    this.debugPanel.removeChild(this.debugPanel.firstChild);
+                }
             }
 
             async init() {
@@ -807,7 +861,7 @@
                 this.setupEventListeners();
                 this.hideLoading();
                 
-                // Start detection loop
+                this.debug('System initialized', 'success');
                 this.detect();
             }
 
@@ -834,9 +888,11 @@
                     });
                     this.video.play();
                     this.setStatus('cameraStatus', 'active');
+                    this.debug('Camera ready', 'success');
                 } catch (err) {
                     console.error('Camera error:', err);
                     this.setStatus('cameraStatus', 'error');
+                    this.debug('Camera access denied!', 'error');
                     this.showNotification('Camera access denied. Please allow camera access.');
                 }
             }
@@ -852,22 +908,21 @@
                     this.faceDetector = await faceLandmarksDetection.createDetector(model, detectorConfig);
                     this.isModelLoaded = true;
                     this.setStatus('faceStatus', 'active');
+                    this.debug('Face model loaded', 'success');
                 } catch (err) {
                     console.error('Model loading error:', err);
                     this.setStatus('faceStatus', 'error');
+                    this.debug('Model load failed: ' + err.message, 'error');
                 }
             }
 
             setupCanvases() {
-                // Overlay canvas
-                this.overlay.width = this.video.videoWidth;
-                this.overlay.height = this.video.videoHeight;
+                this.overlay.width = this.video.videoWidth || 640;
+                this.overlay.height = this.video.videoHeight || 480;
                 
-                // Tracking canvas
                 this.resizeTrackingCanvas();
                 window.addEventListener('resize', () => this.resizeTrackingCanvas());
                 
-                // Eye canvases
                 this.leftEyeCanvas.width = this.eyeImageSize * 2;
                 this.leftEyeCanvas.height = this.eyeImageSize;
                 this.rightEyeCanvas.width = this.eyeImageSize * 2;
@@ -899,7 +954,7 @@
 
             generateCalibrationGrid(rows, cols) {
                 const points = [];
-                const margin = 0.1;
+                const margin = 0.08;
                 for (let r = 0; r < rows; r++) {
                     for (let c = 0; c < cols; c++) {
                         points.push({
@@ -908,7 +963,7 @@
                         });
                     }
                 }
-                // Shuffle points
+                // Shuffle
                 for (let i = points.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
                     [points[i], points[j]] = [points[j], points[i]];
@@ -928,10 +983,6 @@
                 setTimeout(() => notif.classList.remove('show'), 3000);
             }
 
-            // ===============================
-            // Detection Loop
-            // ===============================
-
             async detect() {
                 if (!this.isModelLoaded) {
                     requestAnimationFrame(() => this.detect());
@@ -949,22 +1000,30 @@
                         const features = this.extractFeatures(face);
                         
                         if (features) {
-                            if (this.isCalibrating) {
-                                // Collect calibration data
+                            this.setStatus('eyeStatus', 'active');
+                            document.getElementById('featureStatus').textContent = 'OK';
+                            document.getElementById('featureStatus').className = 'stat-value';
+                            
+                            if (this.isCalibrating && this.isCollecting) {
                                 this.collectCalibrationSample(features);
                             } else if (this.gazeModel.trained) {
-                                // Predict gaze
                                 this.predictGaze(features);
                             }
+                        } else {
+                            this.setStatus('eyeStatus', 'warning');
+                            document.getElementById('featureStatus').textContent = this.lastFeatureStatus || 'No eyes';
+                            document.getElementById('featureStatus').className = 'stat-value error';
                         }
                         
                         this.setStatus('faceStatus', 'active');
                     } else {
                         this.setStatus('faceStatus', 'warning');
+                        this.setStatus('eyeStatus', 'warning');
                         this.clearOverlay();
                     }
                 } catch (err) {
                     console.error('Detection error:', err);
+                    this.debug('Detection error: ' + err.message, 'error');
                 }
 
                 this.inferenceTime = performance.now() - startTime;
@@ -974,93 +1033,119 @@
                 requestAnimationFrame(() => this.detect());
             }
 
-            // ===============================
-            // Feature Extraction
-            // ===============================
-
             extractFeatures(face) {
                 const keypoints = face.keypoints;
                 
-                // MediaPipe FaceMesh eye landmark indices
-                // Left eye: outer corner 33, inner corner 133, top 159, bottom 145
-                // Right eye: outer corner 362, inner corner 263, top 386, bottom 374
-                // Iris landmarks are available with refineLandmarks: true
-                
-                const leftEyeIndices = [33, 160, 158, 133, 153, 144, 145, 163, 7, 173, 157, 246];
-                const rightEyeIndices = [362, 385, 387, 263, 373, 380, 374, 381, 382, 384, 386, 249];
-                const leftIrisIndices = [468, 469, 470, 471, 472]; // Center and 4 points
-                const rightIrisIndices = [473, 474, 475, 476, 477];
-                
-                // Get eye landmarks
-                const leftEyeLandmarks = leftEyeIndices.map(i => keypoints[i]);
-                const rightEyeLandmarks = rightEyeIndices.map(i => keypoints[i]);
-                const leftIrisLandmarks = leftIrisIndices.map(i => keypoints[i]);
-                const rightIrisLandmarks = rightIrisIndices.map(i => keypoints[i]);
-                
-                if (!leftIrisLandmarks[0] || !rightIrisLandmarks[0]) {
+                // Check if we have enough keypoints
+                if (keypoints.length < 468) {
+                    this.lastFeatureStatus = 'Low landmarks';
                     return null;
                 }
                 
-                // Calculate eye bounding boxes
+                // Eye landmark indices for MediaPipe FaceMesh
+                const leftEyeIndices = [33, 160, 158, 133, 153, 144, 145, 163];
+                const rightEyeIndices = [362, 385, 387, 263, 373, 380, 374, 381];
+                
+                // Try to get iris landmarks (indices 468-477 if refineLandmarks worked)
+                let leftIrisCenter, rightIrisCenter;
+                let hasIris = false;
+                
+                if (keypoints.length > 468 && keypoints[468] && keypoints[473]) {
+                    leftIrisCenter = keypoints[468];
+                    rightIrisCenter = keypoints[473];
+                    hasIris = true;
+                } else {
+                    // Fallback: estimate iris center from eye landmarks
+                    const leftEyeLandmarks = leftEyeIndices.map(i => keypoints[i]);
+                    const rightEyeLandmarks = rightEyeIndices.map(i => keypoints[i]);
+                    
+                    leftIrisCenter = this.getCenter(leftEyeLandmarks);
+                    rightIrisCenter = this.getCenter(rightEyeLandmarks);
+                    this.lastFeatureStatus = 'Est. iris';
+                }
+                
+                if (!leftIrisCenter || !rightIrisCenter) {
+                    this.lastFeatureStatus = 'No iris data';
+                    return null;
+                }
+                
+                // Get eye bounding boxes
+                const leftEyeLandmarks = leftEyeIndices.map(i => keypoints[i]);
+                const rightEyeLandmarks = rightEyeIndices.map(i => keypoints[i]);
+                
                 const leftEyeBox = this.getBoundingBox(leftEyeLandmarks);
                 const rightEyeBox = this.getBoundingBox(rightEyeLandmarks);
                 
-                // Extract and draw eye regions
-                this.drawEyeRegion(leftEyeBox, this.leftEyeCtx, leftIrisLandmarks);
-                this.drawEyeRegion(rightEyeBox, this.rightEyeCtx, rightIrisLandmarks);
-                
-                // Calculate iris positions relative to eye corners
-                const leftIrisCenter = leftIrisLandmarks[0];
-                const rightIrisCenter = rightIrisLandmarks[0];
+                // Draw eye regions
+                this.drawEyeRegion(leftEyeBox, this.leftEyeCtx, leftIrisCenter);
+                this.drawEyeRegion(rightEyeBox, this.rightEyeCtx, rightIrisCenter);
                 
                 // Normalize iris position within eye box
+                const leftEyeWidth = leftEyeBox.maxX - leftEyeBox.minX;
+                const leftEyeHeight = leftEyeBox.maxY - leftEyeBox.minY;
+                const rightEyeWidth = rightEyeBox.maxX - rightEyeBox.minX;
+                const rightEyeHeight = rightEyeBox.maxY - rightEyeBox.minY;
+                
+                if (leftEyeWidth < 5 || rightEyeWidth < 5) {
+                    this.lastFeatureStatus = 'Eyes too small';
+                    return null;
+                }
+                
                 const leftIrisNorm = {
-                    x: (leftIrisCenter.x - leftEyeBox.minX) / (leftEyeBox.maxX - leftEyeBox.minX),
-                    y: (leftIrisCenter.y - leftEyeBox.minY) / (leftEyeBox.maxY - leftEyeBox.minY)
+                    x: (leftIrisCenter.x - leftEyeBox.minX) / leftEyeWidth,
+                    y: (leftIrisCenter.y - leftEyeBox.minY) / leftEyeHeight
                 };
                 const rightIrisNorm = {
-                    x: (rightIrisCenter.x - rightEyeBox.minX) / (rightEyeBox.maxX - rightEyeBox.minX),
-                    y: (rightIrisCenter.y - rightEyeBox.minY) / (rightEyeBox.maxY - rightEyeBox.minY)
+                    x: (rightIrisCenter.x - rightEyeBox.minX) / rightEyeWidth,
+                    y: (rightIrisCenter.y - rightEyeBox.minY) / rightEyeHeight
                 };
                 
-                // Calculate eye aspect ratios (for blink detection)
+                // Clamp normalized values
+                leftIrisNorm.x = Math.max(0, Math.min(1, leftIrisNorm.x));
+                leftIrisNorm.y = Math.max(0, Math.min(1, leftIrisNorm.y));
+                rightIrisNorm.x = Math.max(0, Math.min(1, rightIrisNorm.x));
+                rightIrisNorm.y = Math.max(0, Math.min(1, rightIrisNorm.y));
+                
+                // Eye aspect ratios
                 const leftEAR = this.calculateEAR(leftEyeLandmarks);
                 const rightEAR = this.calculateEAR(rightEyeLandmarks);
                 
-                // Head pose estimation (simplified)
+                // Head pose (simplified)
                 const nose = keypoints[1];
                 const leftCheek = keypoints[234];
                 const rightCheek = keypoints[454];
                 const forehead = keypoints[10];
                 const chin = keypoints[152];
                 
-                const headYaw = (rightCheek.x - leftCheek.x) / this.video.videoWidth;
-                const headPitch = (chin.y - forehead.y) / this.video.videoHeight;
+                const videoW = this.video.videoWidth || 640;
+                const videoH = this.video.videoHeight || 480;
+                
+                const headYaw = (rightCheek.x - leftCheek.x) / videoW;
+                const headPitch = (chin.y - forehead.y) / videoH;
                 const headRoll = Math.atan2(rightCheek.y - leftCheek.y, rightCheek.x - leftCheek.x);
                 
-                // Face position (center of face)
                 const faceCenter = {
-                    x: nose.x / this.video.videoWidth,
-                    y: nose.y / this.video.videoHeight
+                    x: nose.x / videoW,
+                    y: nose.y / videoH
                 };
                 
-                // Calculate eye sizes
-                const leftEyeWidth = (leftEyeBox.maxX - leftEyeBox.minX) / this.video.videoWidth;
-                const rightEyeWidth = (rightEyeBox.maxX - rightEyeBox.minX) / this.video.videoWidth;
+                if (hasIris) {
+                    this.lastFeatureStatus = 'Iris OK';
+                }
                 
                 // Build feature vector
                 const features = [
-                    // Iris positions (most important)
+                    // Iris positions (primary features)
                     leftIrisNorm.x,
                     leftIrisNorm.y,
                     rightIrisNorm.x,
                     rightIrisNorm.y,
                     
-                    // Average iris position
+                    // Average iris
                     (leftIrisNorm.x + rightIrisNorm.x) / 2,
                     (leftIrisNorm.y + rightIrisNorm.y) / 2,
                     
-                    // Iris position difference
+                    // Difference
                     leftIrisNorm.x - rightIrisNorm.x,
                     leftIrisNorm.y - rightIrisNorm.y,
                     
@@ -1071,35 +1156,49 @@
                     // Head pose
                     headYaw,
                     headPitch,
-                    headRoll,
+                    Math.sin(headRoll),
+                    Math.cos(headRoll),
                     
                     // Face position
                     faceCenter.x,
                     faceCenter.y,
                     
-                    // Eye sizes (proxy for distance)
-                    leftEyeWidth,
-                    rightEyeWidth,
+                    // Eye sizes (distance proxy)
+                    leftEyeWidth / videoW,
+                    rightEyeWidth / videoW,
                     
-                    // Polynomial features (for non-linearity)
+                    // Polynomial features
                     leftIrisNorm.x * leftIrisNorm.x,
                     leftIrisNorm.y * leftIrisNorm.y,
                     rightIrisNorm.x * rightIrisNorm.x,
                     rightIrisNorm.y * rightIrisNorm.y,
-                    leftIrisNorm.x * leftIrisNorm.y,
-                    rightIrisNorm.x * rightIrisNorm.y,
                     
-                    // Interaction with head pose
+                    // Cross terms
                     leftIrisNorm.x * headYaw,
                     leftIrisNorm.y * headPitch,
                     rightIrisNorm.x * headYaw,
                     rightIrisNorm.y * headPitch,
                     
-                    // Bias term
+                    // Face position interactions
+                    faceCenter.x * leftIrisNorm.x,
+                    faceCenter.y * leftIrisNorm.y,
+                    
+                    // Bias
                     1.0
                 ];
                 
                 return features;
+            }
+
+            getCenter(landmarks) {
+                const sum = landmarks.reduce((acc, p) => ({
+                    x: acc.x + p.x,
+                    y: acc.y + p.y
+                }), { x: 0, y: 0 });
+                return {
+                    x: sum.x / landmarks.length,
+                    y: sum.y / landmarks.length
+                };
             }
 
             getBoundingBox(landmarks) {
@@ -1114,8 +1213,6 @@
             }
 
             calculateEAR(eyeLandmarks) {
-                // Eye Aspect Ratio
-                // Simplified: vertical distance / horizontal distance
                 const horizontal = Math.sqrt(
                     Math.pow(eyeLandmarks[0].x - eyeLandmarks[3].x, 2) +
                     Math.pow(eyeLandmarks[0].y - eyeLandmarks[3].y, 2)
@@ -1128,15 +1225,15 @@
                     Math.pow(eyeLandmarks[2].x - eyeLandmarks[4].x, 2) +
                     Math.pow(eyeLandmarks[2].y - eyeLandmarks[4].y, 2)
                 );
-                return (vertical1 + vertical2) / (2 * horizontal);
+                return horizontal > 0 ? (vertical1 + vertical2) / (2 * horizontal) : 0;
             }
 
-            drawEyeRegion(box, ctx, irisLandmarks) {
-                const padding = 10;
+            drawEyeRegion(box, ctx, irisCenter) {
+                const padding = 15;
                 const sx = Math.max(0, box.minX - padding);
                 const sy = Math.max(0, box.minY - padding);
-                const sw = box.maxX - box.minX + 2 * padding;
-                const sh = box.maxY - box.minY + 2 * padding;
+                const sw = Math.max(1, box.maxX - box.minX + 2 * padding);
+                const sh = Math.max(1, box.maxY - box.minY + 2 * padding);
                 
                 ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
                 ctx.fillStyle = '#0a0a0f';
@@ -1149,84 +1246,85 @@
                         0, 0, ctx.canvas.width, ctx.canvas.height
                     );
                     
-                    // Draw iris indicator
                     const scaleX = ctx.canvas.width / sw;
                     const scaleY = ctx.canvas.height / sh;
-                    const irisX = (irisLandmarks[0].x - sx) * scaleX;
-                    const irisY = (irisLandmarks[0].y - sy) * scaleY;
+                    const irisX = (irisCenter.x - sx) * scaleX;
+                    const irisY = (irisCenter.y - sy) * scaleY;
                     
                     ctx.strokeStyle = '#00f5d4';
                     ctx.lineWidth = 2;
                     ctx.beginPath();
-                    ctx.arc(irisX, irisY, 8, 0, Math.PI * 2);
+                    ctx.arc(irisX, irisY, 10, 0, Math.PI * 2);
                     ctx.stroke();
+                    
+                    ctx.fillStyle = '#f72585';
+                    ctx.beginPath();
+                    ctx.arc(irisX, irisY, 3, 0, Math.PI * 2);
+                    ctx.fill();
                 } catch (e) {
                     // Video might not be ready
                 }
             }
-
-            // ===============================
-            // Visualization
-            // ===============================
 
             drawFaceLandmarks(face) {
                 this.overlayCtx.clearRect(0, 0, this.overlay.width, this.overlay.height);
                 
                 const keypoints = face.keypoints;
                 
-                // Draw face mesh (selected points only for performance)
-                this.overlayCtx.fillStyle = 'rgba(0, 245, 212, 0.5)';
+                // Face outline
+                this.overlayCtx.fillStyle = 'rgba(0, 245, 212, 0.4)';
                 const faceOutlineIndices = [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 109];
                 
                 for (const idx of faceOutlineIndices) {
-                    const point = keypoints[idx];
-                    this.overlayCtx.beginPath();
-                    this.overlayCtx.arc(point.x, point.y, 1, 0, Math.PI * 2);
-                    this.overlayCtx.fill();
+                    if (keypoints[idx]) {
+                        const point = keypoints[idx];
+                        this.overlayCtx.beginPath();
+                        this.overlayCtx.arc(point.x, point.y, 2, 0, Math.PI * 2);
+                        this.overlayCtx.fill();
+                    }
                 }
                 
-                // Draw eye regions
+                // Eye outlines
                 this.overlayCtx.strokeStyle = '#00f5d4';
                 this.overlayCtx.lineWidth = 2;
                 
-                // Left eye
                 const leftEyeIndices = [33, 160, 158, 133, 153, 144, 145, 163];
                 this.drawPath(keypoints, leftEyeIndices, true);
                 
-                // Right eye
                 const rightEyeIndices = [362, 385, 387, 263, 373, 380, 374, 381];
                 this.drawPath(keypoints, rightEyeIndices, true);
                 
-                // Draw iris centers
+                // Iris centers
                 this.overlayCtx.fillStyle = '#f72585';
-                const leftIris = keypoints[468];
-                const rightIris = keypoints[473];
                 
-                if (leftIris && rightIris) {
+                if (keypoints.length > 473 && keypoints[468] && keypoints[473]) {
+                    const leftIris = keypoints[468];
+                    const rightIris = keypoints[473];
+                    
                     this.overlayCtx.beginPath();
-                    this.overlayCtx.arc(leftIris.x, leftIris.y, 4, 0, Math.PI * 2);
+                    this.overlayCtx.arc(leftIris.x, leftIris.y, 5, 0, Math.PI * 2);
                     this.overlayCtx.fill();
                     
                     this.overlayCtx.beginPath();
-                    this.overlayCtx.arc(rightIris.x, rightIris.y, 4, 0, Math.PI * 2);
+                    this.overlayCtx.arc(rightIris.x, rightIris.y, 5, 0, Math.PI * 2);
                     this.overlayCtx.fill();
                 }
             }
 
             drawPath(keypoints, indices, close = false) {
                 if (indices.length < 2) return;
+                if (!keypoints[indices[0]]) return;
                 
                 this.overlayCtx.beginPath();
                 this.overlayCtx.moveTo(keypoints[indices[0]].x, keypoints[indices[0]].y);
                 
                 for (let i = 1; i < indices.length; i++) {
-                    this.overlayCtx.lineTo(keypoints[indices[i]].x, keypoints[indices[i]].y);
+                    if (keypoints[indices[i]]) {
+                        this.overlayCtx.lineTo(keypoints[indices[i]].x, keypoints[indices[i]].y);
+                    }
                 }
                 
-                if (close) {
-                    this.overlayCtx.closePath();
-                }
-                
+                if (close) this.overlayCtx.closePath();
                 this.overlayCtx.stroke();
             }
 
@@ -1241,7 +1339,7 @@
                 
                 ctx.clearRect(0, 0, w, h);
                 
-                // Draw background grid
+                // Grid
                 ctx.strokeStyle = 'rgba(0, 245, 212, 0.05)';
                 ctx.lineWidth = 1;
                 const gridSize = 50;
@@ -1260,12 +1358,10 @@
                     ctx.stroke();
                 }
                 
-                // Draw heatmap if enabled
                 if (this.showHeatmap && this.gazeHistory.length > 0) {
                     this.drawHeatmap(ctx, w, h);
                 }
                 
-                // Draw trail if enabled
                 if (this.showTrail && this.gazeHistory.length > 1) {
                     ctx.strokeStyle = 'rgba(0, 245, 212, 0.3)';
                     ctx.lineWidth = 2;
@@ -1283,12 +1379,10 @@
                     ctx.stroke();
                 }
                 
-                // Draw current gaze point
                 if (this.gazeModel.trained && this.isTracking) {
                     const gx = this.smoothedGaze.x * w;
                     const gy = this.smoothedGaze.y * h;
                     
-                    // Outer glow
                     const gradient = ctx.createRadialGradient(gx, gy, 0, gx, gy, 30);
                     gradient.addColorStop(0, 'rgba(0, 245, 212, 0.5)');
                     gradient.addColorStop(1, 'rgba(0, 245, 212, 0)');
@@ -1297,7 +1391,6 @@
                     ctx.arc(gx, gy, 30, 0, Math.PI * 2);
                     ctx.fill();
                     
-                    // Inner point
                     ctx.fillStyle = '#00f5d4';
                     ctx.beginPath();
                     ctx.arc(gx, gy, 8, 0, Math.PI * 2);
@@ -1311,7 +1404,6 @@
                 const cellH = h / resolution;
                 const grid = new Array(resolution).fill(0).map(() => new Array(resolution).fill(0));
                 
-                // Count gaze points in each cell
                 for (const point of this.gazeHistory) {
                     const cellX = Math.floor(point.x * resolution);
                     const cellY = Math.floor(point.y * resolution);
@@ -1320,7 +1412,6 @@
                     }
                 }
                 
-                // Find max for normalization
                 let maxCount = 1;
                 for (let y = 0; y < resolution; y++) {
                     for (let x = 0; x < resolution; x++) {
@@ -1328,7 +1419,6 @@
                     }
                 }
                 
-                // Draw heatmap
                 for (let y = 0; y < resolution; y++) {
                     for (let x = 0; x < resolution; x++) {
                         const intensity = grid[y][x] / maxCount;
@@ -1360,6 +1450,7 @@
 
             startCalibration() {
                 this.isCalibrating = true;
+                this.isCollecting = false;
                 this.currentCalibPoint = 0;
                 this.currentPointSamples = 0;
                 this.calibrationPoints = this.generateCalibrationGrid(3, 3);
@@ -1370,36 +1461,42 @@
                 this.isTracking = false;
                 this.gazeCursor.classList.remove('active');
                 
+                this.debug('Calibration started', 'success');
                 setTimeout(() => this.showCalibrationPoint(), 500);
             }
 
             startImprovement() {
                 this.isCalibrating = true;
+                this.isCollecting = false;
                 this.currentCalibPoint = 0;
                 this.currentPointSamples = 0;
                 this.calibrationPoints = this.generateCalibrationGrid(3, 3);
                 
                 document.getElementById('calibInstructions').textContent = 
-                    'Adding more samples will improve tracking accuracy. Look at each point and click.';
+                    'Adding more samples will improve accuracy. Look at each point and click.';
                 document.getElementById('calibrationOverlay').classList.add('active');
                 this.setStatus('calibrationStatus', 'warning');
                 this.setStatus('trackingStatus', '');
                 this.isTracking = false;
                 this.gazeCursor.classList.remove('active');
                 
+                this.debug('Improvement mode started', 'success');
                 setTimeout(() => this.showCalibrationPoint(), 500);
             }
 
             cancelCalibration() {
                 this.isCalibrating = false;
+                this.isCollecting = false;
                 document.getElementById('calibrationOverlay').classList.remove('active');
-                document.getElementById('calibPoint').classList.remove('active');
+                document.getElementById('calibPoint').classList.remove('active', 'collecting');
                 
                 if (this.gazeModel.trained) {
                     this.setStatus('calibrationStatus', 'active');
                     this.isTracking = true;
                     this.gazeCursor.classList.add('active');
                 }
+                
+                this.debug('Calibration cancelled');
             }
 
             showCalibrationPoint() {
@@ -1415,7 +1512,16 @@
                 calibPoint.classList.add('active');
                 calibPoint.classList.remove('collecting');
                 
+                // Reset progress ring
+                const progressCircle = calibPoint.querySelector('.progress');
+                progressCircle.style.strokeDashoffset = '188.5';
+                document.getElementById('sampleCounter').textContent = '0';
+                
+                this.currentPointSamples = 0;
+                this.isCollecting = false;
+                
                 this.updateCalibrationProgress();
+                this.debug(`Point ${this.currentCalibPoint + 1}/9 shown at (${(point.x*100).toFixed(0)}%, ${(point.y*100).toFixed(0)}%)`);
             }
 
             onCalibPointClick() {
@@ -1423,12 +1529,14 @@
                 
                 const calibPoint = document.getElementById('calibPoint');
                 calibPoint.classList.add('collecting');
+                this.isCollecting = true;
                 this.currentPointSamples = 0;
+                
+                this.debug('Collecting samples...', 'success');
             }
 
             collectCalibrationSample(features) {
-                const calibPoint = document.getElementById('calibPoint');
-                if (!calibPoint.classList.contains('collecting')) return;
+                if (!this.isCollecting) return;
                 
                 const point = this.calibrationPoints[this.currentCalibPoint];
                 
@@ -1438,15 +1546,29 @@
                 
                 this.currentPointSamples++;
                 
+                // Update progress ring
+                const progress = this.currentPointSamples / this.calibrationSamplesPerPoint;
+                const circumference = 188.5;
+                const offset = circumference * (1 - progress);
+                
+                const progressCircle = document.querySelector('.calibration-point .progress');
+                progressCircle.style.strokeDashoffset = offset;
+                document.getElementById('sampleCounter').textContent = this.currentPointSamples;
+                
                 if (this.currentPointSamples >= this.calibrationSamplesPerPoint) {
+                    const calibPoint = document.getElementById('calibPoint');
                     calibPoint.classList.remove('collecting', 'active');
+                    this.isCollecting = false;
+                    
                     this.currentCalibPoint++;
                     this.updateCalibrationProgress();
+                    
+                    this.debug(`Point ${this.currentCalibPoint}/9 complete (${this.trainingData.features.length} total samples)`, 'success');
                     
                     if (this.currentCalibPoint >= this.calibrationPoints.length) {
                         this.finishCalibration();
                     } else {
-                        setTimeout(() => this.showCalibrationPoint(), 300);
+                        setTimeout(() => this.showCalibrationPoint(), 400);
                     }
                 }
                 
@@ -1464,9 +1586,10 @@
 
             finishCalibration() {
                 this.isCalibrating = false;
+                this.isCollecting = false;
                 document.getElementById('calibrationOverlay').classList.remove('active');
                 
-                // Train the model
+                this.debug('Training model...', 'success');
                 this.trainModel();
                 
                 this.setStatus('calibrationStatus', 'active');
@@ -1476,10 +1599,11 @@
                 document.getElementById('improveBtn').disabled = false;
                 
                 this.showNotification('Calibration complete! Eye tracking is now active.');
+                this.debug('Calibration complete!', 'success');
             }
 
             // ===============================
-            // Ridge Regression Model
+            // Ridge Regression
             // ===============================
 
             trainModel() {
@@ -1488,16 +1612,14 @@
                 const yY = this.trainingData.targetsY;
                 
                 if (X.length < 9) {
-                    console.error('Not enough training data');
+                    this.debug('Not enough training data', 'error');
                     return;
                 }
                 
-                // Convert to tensors
                 const XTensor = tf.tensor2d(X);
                 const yXTensor = tf.tensor1d(yX);
                 const yYTensor = tf.tensor1d(yY);
                 
-                // Ridge regression: w = (X'X + λI)^(-1) X'y
                 const lambda = this.gazeModel.regularization;
                 const XT = XTensor.transpose();
                 const XTX = XT.matMul(XTensor);
@@ -1505,25 +1627,23 @@
                 const XTX_reg = XTX.add(identity);
                 
                 try {
-                    // Solve for X weights
                     const XTyX = XT.matMul(yXTensor.reshape([-1, 1]));
                     this.gazeModel.weightsX = tf.linalg.solve(XTX_reg, XTyX).squeeze();
                     
-                    // Solve for Y weights
                     const XTyY = XT.matMul(yYTensor.reshape([-1, 1]));
                     this.gazeModel.weightsY = tf.linalg.solve(XTX_reg, XTyY).squeeze();
                     
                     this.gazeModel.trained = true;
                     
-                    // Calculate training accuracy
                     this.calculateAccuracy(XTensor, yXTensor, yYTensor);
+                    this.debug('Model trained successfully', 'success');
                     
                 } catch (e) {
                     console.error('Training error:', e);
+                    this.debug('Training failed: ' + e.message, 'error');
                     this.showNotification('Training failed. Please try calibrating again.');
                 }
                 
-                // Clean up
                 XTensor.dispose();
                 yXTensor.dispose();
                 yYTensor.dispose();
@@ -1537,7 +1657,6 @@
                 const predX = X.matMul(this.gazeModel.weightsX.reshape([-1, 1])).squeeze();
                 const predY = X.matMul(this.gazeModel.weightsY.reshape([-1, 1])).squeeze();
                 
-                // Calculate RMSE
                 const errorX = predX.sub(yX).square().mean().sqrt();
                 const errorY = predY.sub(yY).square().mean().sqrt();
                 
@@ -1545,10 +1664,10 @@
                 const rmseY = errorY.dataSync()[0];
                 const avgError = (rmseX + rmseY) / 2;
                 
-                // Convert to approximate pixel error (assuming 1920x1080 screen)
-                const pixelError = avgError * Math.sqrt(1920 * 1080);
+                const pixelError = avgError * Math.sqrt(window.innerWidth * window.innerHeight);
                 
                 document.getElementById('modelAccuracy').textContent = `~${Math.round(pixelError)}px`;
+                this.debug(`Model accuracy: ~${Math.round(pixelError)}px error`);
                 
                 predX.dispose();
                 predY.dispose();
@@ -1566,29 +1685,24 @@
                 
                 featureTensor.dispose();
                 
-                // Clamp predictions
                 this.currentGaze.x = Math.max(0, Math.min(1, predX));
                 this.currentGaze.y = Math.max(0, Math.min(1, predY));
                 
-                // Apply smoothing
                 this.smoothedGaze.x = this.smoothedGaze.x * (1 - this.smoothingFactor) + 
                                        this.currentGaze.x * this.smoothingFactor;
                 this.smoothedGaze.y = this.smoothedGaze.y * (1 - this.smoothingFactor) + 
                                        this.currentGaze.y * this.smoothingFactor;
                 
-                // Store in history
                 this.gazeHistory.push({
                     x: this.smoothedGaze.x,
                     y: this.smoothedGaze.y,
                     timestamp: performance.now()
                 });
                 
-                // Limit history size
                 if (this.gazeHistory.length > 1000) {
                     this.gazeHistory.shift();
                 }
                 
-                // Update gaze cursor
                 this.updateGazeCursor();
             }
 
@@ -1599,10 +1713,6 @@
                 this.gazeCursor.style.left = `${screenX}px`;
                 this.gazeCursor.style.top = `${screenY}px`;
             }
-
-            // ===============================
-            // Data Management
-            // ===============================
 
             clearTrainingData() {
                 this.trainingData = {
@@ -1625,6 +1735,7 @@
                 this.gazeCursor.classList.remove('active');
                 document.getElementById('improveBtn').disabled = true;
                 
+                this.debug('Training data cleared');
                 this.showNotification('Training data cleared.');
             }
 
@@ -1643,11 +1754,11 @@
                 a.click();
                 URL.revokeObjectURL(url);
                 
+                this.debug('Data exported');
                 this.showNotification('Data exported successfully.');
             }
         }
 
-        // Initialize on load
         window.addEventListener('load', () => {
             window.gazeTracker = new GazeTracker();
         });

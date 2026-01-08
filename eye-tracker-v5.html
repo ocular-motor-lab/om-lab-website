@@ -1,0 +1,1456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural Gaze Tracker v3</title>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --accent-cyan: #00f5d4;
+            --accent-magenta: #f72585;
+            --accent-blue: #4361ee;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --text-dim: #606070;
+            --glow-cyan: 0 0 30px rgba(0, 245, 212, 0.4);
+            --glow-magenta: 0 0 30px rgba(247, 37, 133, 0.4);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .bg-grid {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 245, 212, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 245, 212, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(0, 245, 212, 0.1);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 40px; height: 40px;
+            border: 2px solid var(--accent-cyan);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo-icon::before {
+            content: '';
+            width: 12px; height: 12px;
+            background: var(--accent-cyan);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(0.8); opacity: 0.6; }
+        }
+
+        .logo-text {
+            font-size: 1.4rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .status-bar {
+            display: flex;
+            gap: 30px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--text-dim);
+            transition: all 0.3s;
+        }
+
+        .status-dot.active {
+            background: var(--accent-cyan);
+            box-shadow: var(--glow-cyan);
+        }
+
+        .status-dot.warning {
+            background: #ffd60a;
+            box-shadow: 0 0 20px rgba(255, 214, 10, 0.4);
+        }
+
+        .status-dot.error {
+            background: var(--accent-magenta);
+            box-shadow: var(--glow-magenta);
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            padding: 20px 40px;
+            gap: 30px;
+            overflow: hidden;
+        }
+
+        .video-panel {
+            width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .video-container {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(0, 245, 212, 0.2);
+        }
+
+        .video-header {
+            padding: 12px 16px;
+            background: var(--bg-tertiary);
+            display: flex;
+            justify-content: space-between;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .video-wrapper {
+            position: relative;
+            aspect-ratio: 4/3;
+        }
+
+        #webcam {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        #overlay {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            transform: scaleX(-1);
+        }
+
+        .eye-crops {
+            display: flex;
+            gap: 15px;
+        }
+
+        .eye-crop {
+            flex: 1;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 12px;
+            border: 1px solid rgba(0, 245, 212, 0.15);
+        }
+
+        .eye-crop-header {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .eye-canvas {
+            width: 100%;
+            aspect-ratio: 2/1;
+            background: var(--bg-primary);
+            border-radius: 8px;
+        }
+
+        .stats-panel {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid rgba(0, 245, 212, 0.15);
+        }
+
+        .stats-header {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.85rem;
+        }
+
+        .stat-row:last-child { border-bottom: none; }
+
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-cyan);
+        }
+
+        .stat-value.error { color: var(--accent-magenta); }
+
+        .debug-panel {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 12px;
+            border: 1px solid rgba(247, 37, 133, 0.3);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            max-height: 80px;
+            overflow-y: auto;
+        }
+
+        .debug-line { padding: 2px 0; }
+        .debug-line.error { color: var(--accent-magenta); }
+        .debug-line.success { color: var(--accent-cyan); }
+
+        .tracking-area {
+            flex: 1;
+            position: relative;
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            border: 1px solid rgba(0, 245, 212, 0.2);
+            overflow: hidden;
+        }
+
+        .tracking-header {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            padding: 16px 24px;
+            background: linear-gradient(180deg, var(--bg-tertiary), transparent);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .tracking-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        #trackingCanvas { width: 100%; height: 100%; }
+
+        #gazeCursor {
+            position: fixed;
+            width: 40px; height: 40px;
+            border: 3px solid var(--accent-cyan);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1000;
+            transform: translate(-50%, -50%);
+            display: none;
+            transition: left 0.08s ease-out, top 0.08s ease-out;
+        }
+
+        #gazeCursor::before {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 8px; height: 8px;
+            background: var(--accent-cyan);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        #gazeCursor.active {
+            display: block;
+            box-shadow: var(--glow-cyan);
+        }
+
+        #calibrationOverlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(10, 10, 15, 0.95);
+            z-index: 2000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #calibrationOverlay.active { display: flex; }
+
+        .calibration-content {
+            text-align: center;
+            max-width: 600px;
+            padding: 40px;
+        }
+
+        .calibration-title {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .calibration-subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: var(--bg-tertiary);
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-blue));
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-dim);
+        }
+
+        .calibration-point {
+            position: fixed;
+            width: 60px; height: 60px;
+            cursor: pointer;
+            transform: translate(-50%, -50%) scale(0);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 2001;
+            display: none;
+        }
+
+        .calibration-point.active {
+            display: block;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .calibration-point .point-bg {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: var(--accent-magenta);
+            border-radius: 50%;
+            box-shadow: var(--glow-magenta);
+        }
+
+        .calibration-point .point-center {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 12px; height: 12px;
+            background: white;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+        }
+
+        .calibration-point .progress-ring {
+            position: absolute;
+            top: -5px; left: -5px;
+            width: 70px; height: 70px;
+        }
+
+        .calibration-point .progress-ring circle {
+            fill: none;
+            stroke-width: 4;
+        }
+
+        .calibration-point .progress-ring .bg { stroke: rgba(255, 255, 255, 0.2); }
+
+        .calibration-point .progress-ring .progress {
+            stroke: var(--accent-cyan);
+            stroke-linecap: round;
+            transform: rotate(-90deg);
+            transform-origin: center;
+            transition: stroke-dashoffset 0.1s ease;
+        }
+
+        .calibration-point .sample-count {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: white;
+            z-index: 3;
+            opacity: 0;
+        }
+
+        .calibration-point.collecting .sample-count { opacity: 1; }
+        .calibration-point.collecting .point-center { opacity: 0; }
+
+        .btn {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1rem;
+            font-weight: 500;
+            padding: 14px 32px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            color: var(--bg-primary);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--glow-cyan);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--accent-cyan);
+            border: 2px solid var(--accent-cyan);
+        }
+
+        .btn-secondary:hover { background: rgba(0, 245, 212, 0.1); }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .control-btn {
+            padding: 8px 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            background: var(--bg-tertiary);
+            border: 1px solid rgba(0, 245, 212, 0.2);
+            color: var(--text-secondary);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .control-btn:hover {
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+
+        .control-btn.active {
+            background: var(--accent-cyan);
+            color: var(--bg-primary);
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: var(--bg-primary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+        }
+
+        .loading-overlay.hidden { display: none; }
+
+        .loader {
+            width: 60px; height: 60px;
+            border: 3px solid var(--bg-tertiary);
+            border-top-color: var(--accent-cyan);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .loading-text {
+            margin-top: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-secondary);
+        }
+
+        .notification {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--bg-secondary);
+            border: 1px solid var(--accent-cyan);
+            border-radius: 8px;
+            padding: 16px 24px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            z-index: 2500;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loader"></div>
+        <div class="loading-text" id="loadingText">Initializing MediaPipe...</div>
+    </div>
+
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon"></div>
+                <span class="logo-text">NEURAL GAZE v3</span>
+            </div>
+            <div class="status-bar">
+                <div class="status-item">
+                    <div class="status-dot" id="cameraStatus"></div>
+                    <span>Camera</span>
+                </div>
+                <div class="status-item">
+                    <div class="status-dot" id="faceStatus"></div>
+                    <span>Face</span>
+                </div>
+                <div class="status-item">
+                    <div class="status-dot" id="eyeStatus"></div>
+                    <span>Eyes</span>
+                </div>
+                <div class="status-item">
+                    <div class="status-dot" id="calibrationStatus"></div>
+                    <span>Calibrated</span>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <div class="video-panel">
+                <div class="video-container">
+                    <div class="video-header">
+                        <span>WEBCAM FEED</span>
+                        <span id="fpsCounter">0 FPS</span>
+                    </div>
+                    <div class="video-wrapper">
+                        <video id="webcam" autoplay playsinline></video>
+                        <canvas id="overlay"></canvas>
+                    </div>
+                </div>
+
+                <div class="eye-crops">
+                    <div class="eye-crop">
+                        <div class="eye-crop-header">Left Eye</div>
+                        <canvas id="leftEyeCanvas" class="eye-canvas"></canvas>
+                    </div>
+                    <div class="eye-crop">
+                        <div class="eye-crop-header">Right Eye</div>
+                        <canvas id="rightEyeCanvas" class="eye-canvas"></canvas>
+                    </div>
+                </div>
+
+                <div class="stats-panel">
+                    <div class="stats-header">Statistics</div>
+                    <div class="stat-row">
+                        <span>Samples</span>
+                        <span class="stat-value" id="sampleCount">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>Accuracy</span>
+                        <span class="stat-value" id="modelAccuracy">--</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>Latency</span>
+                        <span class="stat-value" id="inferenceTime">-- ms</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>Calibration</span>
+                        <span class="stat-value" id="calibPoints">0 / 9</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>Status</span>
+                        <span class="stat-value" id="featureStatus">--</span>
+                    </div>
+                </div>
+
+                <div class="debug-panel" id="debugPanel">
+                    <div class="debug-line">Ready...</div>
+                </div>
+
+                <div class="btn-group" style="flex-direction: column;">
+                    <button class="btn btn-primary" id="calibrateBtn" disabled>Start Calibration</button>
+                    <button class="btn btn-secondary" id="improveBtn" disabled>Add More Samples</button>
+                </div>
+            </div>
+
+            <div class="tracking-area">
+                <div class="tracking-header">
+                    <span class="tracking-title">Gaze Tracking</span>
+                    <div class="controls">
+                        <button class="control-btn" id="toggleHeatmap">Heatmap</button>
+                        <button class="control-btn" id="toggleTrail">Trail</button>
+                        <button class="control-btn" id="clearData">Clear</button>
+                    </div>
+                </div>
+                <canvas id="trackingCanvas"></canvas>
+            </div>
+        </main>
+    </div>
+
+    <div id="calibrationOverlay">
+        <div class="calibration-content">
+            <h2 class="calibration-title">Calibration Mode</h2>
+            <p class="calibration-subtitle" id="calibInstructions">
+                Look at each magenta dot and click it. Keep looking until the cyan ring completes.
+            </p>
+            <div class="progress-bar">
+                <div class="progress-fill" id="calibProgress"></div>
+            </div>
+            <div class="progress-text" id="calibProgressText">0 / 9 points</div>
+            <div class="btn-group">
+                <button class="btn btn-secondary" id="cancelCalib">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="calibration-point" id="calibPoint">
+        <div class="point-bg"></div>
+        <div class="point-center"></div>
+        <svg class="progress-ring">
+            <circle class="bg" cx="35" cy="35" r="30"></circle>
+            <circle class="progress" cx="35" cy="35" r="30" stroke-dasharray="188.5" stroke-dashoffset="188.5"></circle>
+        </svg>
+        <div class="sample-count" id="sampleCounter">0</div>
+    </div>
+    
+    <div id="gazeCursor"></div>
+    <div class="notification" id="notification"></div>
+
+    <script>
+    class GazeTracker {
+        constructor() {
+            this.video = document.getElementById('webcam');
+            this.overlay = document.getElementById('overlay');
+            this.ctx = this.overlay.getContext('2d');
+            this.trackingCanvas = document.getElementById('trackingCanvas');
+            this.trackingCtx = this.trackingCanvas.getContext('2d');
+            this.leftEyeCanvas = document.getElementById('leftEyeCanvas');
+            this.leftEyeCtx = this.leftEyeCanvas.getContext('2d');
+            this.rightEyeCanvas = document.getElementById('rightEyeCanvas');
+            this.rightEyeCtx = this.rightEyeCanvas.getContext('2d');
+            this.gazeCursor = document.getElementById('gazeCursor');
+            this.debugPanel = document.getElementById('debugPanel');
+            
+            this.faceMesh = null;
+            this.camera = null;
+            this.lastResults = null;
+            
+            // Ridge regression model
+            this.model = { weightsX: null, weightsY: null, trained: false };
+            this.trainingData = { features: [], targetsX: [], targetsY: [] };
+            
+            // Calibration
+            this.calibPoints = [];
+            this.currentPoint = 0;
+            this.isCalibrating = false;
+            this.isCollecting = false;
+            this.samplesPerPoint = 25;
+            this.currentSamples = 0;
+            
+            // Tracking
+            this.isTracking = false;
+            this.gazeHistory = [];
+            this.smoothedGaze = { x: 0.5, y: 0.5 };
+            this.smoothing = 0.2;
+            this.showTrail = false;
+            this.showHeatmap = false;
+            
+            // FPS
+            this.frameCount = 0;
+            this.lastFpsTime = performance.now();
+            this.fps = 0;
+            
+            this.init();
+        }
+
+        debug(msg, type = 'info') {
+            const line = document.createElement('div');
+            line.className = 'debug-line ' + type;
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            this.debugPanel.appendChild(line);
+            this.debugPanel.scrollTop = this.debugPanel.scrollHeight;
+            while (this.debugPanel.children.length > 15) {
+                this.debugPanel.removeChild(this.debugPanel.firstChild);
+            }
+            console.log(`[${type}] ${msg}`);
+        }
+
+        async init() {
+            this.debug('Starting initialization...');
+            this.setupCanvases();
+            this.setupEventListeners();
+            
+            try {
+                await this.setupMediaPipe();
+                await this.setupCamera();
+                document.getElementById('loadingOverlay').classList.add('hidden');
+                document.getElementById('calibrateBtn').disabled = false;
+            } catch (err) {
+                this.debug('Init failed: ' + err.message, 'error');
+                document.getElementById('loadingText').textContent = 'Error: ' + err.message;
+            }
+        }
+
+        async setupMediaPipe() {
+            this.debug('Loading MediaPipe FaceMesh...');
+            document.getElementById('loadingText').textContent = 'Loading face detection model...';
+            
+            this.faceMesh = new FaceMesh({
+                locateFile: (file) => {
+                    return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+                }
+            });
+            
+            this.faceMesh.setOptions({
+                maxNumFaces: 1,
+                refineLandmarks: true,
+                minDetectionConfidence: 0.5,
+                minTrackingConfidence: 0.5
+            });
+            
+            this.faceMesh.onResults((results) => this.onResults(results));
+            
+            this.debug('MediaPipe loaded!', 'success');
+        }
+
+        async setupCamera() {
+            this.debug('Setting up camera...');
+            document.getElementById('loadingText').textContent = 'Accessing camera...';
+            
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { width: 640, height: 480, facingMode: 'user' }
+            });
+            
+            this.video.srcObject = stream;
+            await new Promise(resolve => this.video.onloadedmetadata = resolve);
+            
+            this.overlay.width = this.video.videoWidth;
+            this.overlay.height = this.video.videoHeight;
+            
+            this.debug('Camera ready: ' + this.video.videoWidth + 'x' + this.video.videoHeight, 'success');
+            this.setStatus('cameraStatus', 'active');
+            
+            // Start processing
+            this.processFrame();
+        }
+
+        async processFrame() {
+            if (this.video.readyState >= 2) {
+                await this.faceMesh.send({ image: this.video });
+            }
+            requestAnimationFrame(() => this.processFrame());
+        }
+
+        onResults(results) {
+            this.lastResults = results;
+            this.updateFPS();
+            
+            this.ctx.clearRect(0, 0, this.overlay.width, this.overlay.height);
+            
+            if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+                const landmarks = results.multiFaceLandmarks[0];
+                this.setStatus('faceStatus', 'active');
+                
+                this.drawLandmarks(landmarks);
+                const features = this.extractFeatures(landmarks);
+                
+                if (features) {
+                    this.setStatus('eyeStatus', 'active');
+                    document.getElementById('featureStatus').textContent = 'OK';
+                    document.getElementById('featureStatus').className = 'stat-value';
+                    
+                    if (this.isCalibrating && this.isCollecting) {
+                        this.collectSample(features);
+                    } else if (this.model.trained) {
+                        this.predict(features);
+                    }
+                }
+            } else {
+                this.setStatus('faceStatus', 'warning');
+                this.setStatus('eyeStatus', 'warning');
+                document.getElementById('featureStatus').textContent = 'No face';
+                document.getElementById('featureStatus').className = 'stat-value error';
+            }
+            
+            this.drawTrackingArea();
+        }
+
+        extractFeatures(landmarks) {
+            // MediaPipe FaceMesh indices
+            // Left eye: 33, 160, 158, 133, 153, 144, 145, 163
+            // Right eye: 362, 385, 387, 263, 373, 380, 374, 381
+            // Left iris center: 468, Right iris center: 473
+            
+            const w = this.video.videoWidth;
+            const h = this.video.videoHeight;
+            
+            // Get iris centers
+            const leftIris = landmarks[468];
+            const rightIris = landmarks[473];
+            
+            if (!leftIris || !rightIris) {
+                document.getElementById('featureStatus').textContent = 'No iris';
+                return null;
+            }
+            
+            // Get eye corners for normalization
+            const leftOuter = landmarks[33];
+            const leftInner = landmarks[133];
+            const rightInner = landmarks[362];
+            const rightOuter = landmarks[263];
+            
+            // Eye bounds
+            const leftEyeTop = landmarks[159];
+            const leftEyeBottom = landmarks[145];
+            const rightEyeTop = landmarks[386];
+            const rightEyeBottom = landmarks[374];
+            
+            // Normalize iris position within eye
+            const leftEyeW = Math.abs(leftInner.x - leftOuter.x);
+            const leftEyeH = Math.abs(leftEyeTop.y - leftEyeBottom.y);
+            const rightEyeW = Math.abs(rightOuter.x - rightInner.x);
+            const rightEyeH = Math.abs(rightEyeTop.y - rightEyeBottom.y);
+            
+            if (leftEyeW < 0.01 || rightEyeW < 0.01) {
+                document.getElementById('featureStatus').textContent = 'Eyes small';
+                return null;
+            }
+            
+            // Iris position relative to eye (0-1)
+            const leftIrisX = (leftIris.x - leftOuter.x) / leftEyeW;
+            const leftIrisY = (leftIris.y - leftEyeTop.y) / (leftEyeH || 0.01);
+            const rightIrisX = (rightIris.x - rightInner.x) / rightEyeW;
+            const rightIrisY = (rightIris.y - rightEyeTop.y) / (rightEyeH || 0.01);
+            
+            // Draw eye crops
+            this.drawEyeCrop(leftOuter, leftInner, leftEyeTop, leftEyeBottom, leftIris, this.leftEyeCtx);
+            this.drawEyeCrop(rightInner, rightOuter, rightEyeTop, rightEyeBottom, rightIris, this.rightEyeCtx);
+            
+            // Head pose from face landmarks
+            const nose = landmarks[1];
+            const leftCheek = landmarks[234];
+            const rightCheek = landmarks[454];
+            const forehead = landmarks[10];
+            const chin = landmarks[152];
+            
+            const headYaw = rightCheek.x - leftCheek.x;
+            const headPitch = chin.y - forehead.y;
+            const headRoll = Math.atan2(rightCheek.y - leftCheek.y, rightCheek.x - leftCheek.x);
+            
+            // Build feature vector
+            const features = [
+                leftIrisX, leftIrisY,
+                rightIrisX, rightIrisY,
+                (leftIrisX + rightIrisX) / 2,
+                (leftIrisY + rightIrisY) / 2,
+                leftIrisX - rightIrisX,
+                leftIrisY - rightIrisY,
+                headYaw, headPitch,
+                Math.sin(headRoll), Math.cos(headRoll),
+                nose.x, nose.y,
+                leftEyeW, rightEyeW,
+                // Polynomial
+                leftIrisX * leftIrisX,
+                leftIrisY * leftIrisY,
+                rightIrisX * rightIrisX,
+                rightIrisY * rightIrisY,
+                leftIrisX * headYaw,
+                leftIrisY * headPitch,
+                rightIrisX * headYaw,
+                rightIrisY * headPitch,
+                1.0 // bias
+            ];
+            
+            // Check for NaN
+            if (features.some(f => isNaN(f) || !isFinite(f))) {
+                document.getElementById('featureStatus').textContent = 'NaN';
+                return null;
+            }
+            
+            return features;
+        }
+
+        drawEyeCrop(outer, inner, top, bottom, iris, ctx) {
+            const w = this.video.videoWidth;
+            const h = this.video.videoHeight;
+            
+            const padding = 0.02;
+            const minX = Math.min(outer.x, inner.x) - padding;
+            const maxX = Math.max(outer.x, inner.x) + padding;
+            const minY = Math.min(top.y, bottom.y) - padding;
+            const maxY = Math.max(top.y, bottom.y) + padding;
+            
+            const sx = minX * w;
+            const sy = minY * h;
+            const sw = (maxX - minX) * w;
+            const sh = (maxY - minY) * h;
+            
+            ctx.fillStyle = '#0a0a0f';
+            ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+            
+            try {
+                ctx.drawImage(this.video, sx, sy, sw, sh, 0, 0, ctx.canvas.width, ctx.canvas.height);
+                
+                // Draw iris marker
+                const irisX = ((iris.x - minX) / (maxX - minX)) * ctx.canvas.width;
+                const irisY = ((iris.y - minY) / (maxY - minY)) * ctx.canvas.height;
+                
+                ctx.strokeStyle = '#00f5d4';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(irisX, irisY, 8, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                ctx.fillStyle = '#f72585';
+                ctx.beginPath();
+                ctx.arc(irisX, irisY, 3, 0, Math.PI * 2);
+                ctx.fill();
+            } catch (e) {}
+        }
+
+        drawLandmarks(landmarks) {
+            const w = this.overlay.width;
+            const h = this.overlay.height;
+            
+            // Draw face outline
+            this.ctx.fillStyle = 'rgba(0, 245, 212, 0.3)';
+            const faceOutline = [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 109];
+            
+            for (const idx of faceOutline) {
+                const p = landmarks[idx];
+                this.ctx.beginPath();
+                this.ctx.arc(p.x * w, p.y * h, 2, 0, Math.PI * 2);
+                this.ctx.fill();
+            }
+            
+            // Draw eyes
+            this.ctx.strokeStyle = '#00f5d4';
+            this.ctx.lineWidth = 2;
+            
+            const leftEye = [33, 160, 158, 133, 153, 144, 145, 163];
+            const rightEye = [362, 385, 387, 263, 373, 380, 374, 381];
+            
+            this.drawEyePath(landmarks, leftEye, w, h);
+            this.drawEyePath(landmarks, rightEye, w, h);
+            
+            // Draw iris
+            this.ctx.fillStyle = '#f72585';
+            const leftIris = landmarks[468];
+            const rightIris = landmarks[473];
+            
+            this.ctx.beginPath();
+            this.ctx.arc(leftIris.x * w, leftIris.y * h, 4, 0, Math.PI * 2);
+            this.ctx.fill();
+            
+            this.ctx.beginPath();
+            this.ctx.arc(rightIris.x * w, rightIris.y * h, 4, 0, Math.PI * 2);
+            this.ctx.fill();
+        }
+
+        drawEyePath(landmarks, indices, w, h) {
+            this.ctx.beginPath();
+            const first = landmarks[indices[0]];
+            this.ctx.moveTo(first.x * w, first.y * h);
+            for (let i = 1; i < indices.length; i++) {
+                const p = landmarks[indices[i]];
+                this.ctx.lineTo(p.x * w, p.y * h);
+            }
+            this.ctx.closePath();
+            this.ctx.stroke();
+        }
+
+        setupCanvases() {
+            this.leftEyeCanvas.width = 128;
+            this.leftEyeCanvas.height = 64;
+            this.rightEyeCanvas.width = 128;
+            this.rightEyeCanvas.height = 64;
+            
+            this.resizeTrackingCanvas();
+            window.addEventListener('resize', () => this.resizeTrackingCanvas());
+        }
+
+        resizeTrackingCanvas() {
+            const rect = this.trackingCanvas.parentElement.getBoundingClientRect();
+            this.trackingCanvas.width = rect.width;
+            this.trackingCanvas.height = rect.height;
+        }
+
+        setupEventListeners() {
+            document.getElementById('calibrateBtn').addEventListener('click', () => this.startCalibration());
+            document.getElementById('improveBtn').addEventListener('click', () => this.startCalibration(true));
+            document.getElementById('cancelCalib').addEventListener('click', () => this.cancelCalibration());
+            document.getElementById('calibPoint').addEventListener('click', () => this.onPointClick());
+            document.getElementById('toggleHeatmap').addEventListener('click', (e) => {
+                this.showHeatmap = !this.showHeatmap;
+                e.target.classList.toggle('active', this.showHeatmap);
+            });
+            document.getElementById('toggleTrail').addEventListener('click', (e) => {
+                this.showTrail = !this.showTrail;
+                e.target.classList.toggle('active', this.showTrail);
+            });
+            document.getElementById('clearData').addEventListener('click', () => this.clearData());
+        }
+
+        setStatus(id, status) {
+            document.getElementById(id).className = 'status-dot ' + status;
+        }
+
+        showNotification(msg) {
+            const n = document.getElementById('notification');
+            n.textContent = msg;
+            n.classList.add('show');
+            setTimeout(() => n.classList.remove('show'), 3000);
+        }
+
+        updateFPS() {
+            this.frameCount++;
+            const now = performance.now();
+            if (now - this.lastFpsTime >= 1000) {
+                this.fps = Math.round(this.frameCount * 1000 / (now - this.lastFpsTime));
+                this.frameCount = 0;
+                this.lastFpsTime = now;
+                document.getElementById('fpsCounter').textContent = this.fps + ' FPS';
+            }
+        }
+
+        // Calibration
+        startCalibration(improve = false) {
+            this.calibPoints = this.generateGrid(3, 3);
+            this.currentPoint = 0;
+            this.isCalibrating = true;
+            this.isCollecting = false;
+            this.currentSamples = 0;
+            
+            if (!improve) {
+                this.trainingData = { features: [], targetsX: [], targetsY: [] };
+            }
+            
+            document.getElementById('calibrationOverlay').classList.add('active');
+            this.setStatus('calibrationStatus', 'warning');
+            this.isTracking = false;
+            this.gazeCursor.classList.remove('active');
+            
+            this.debug('Calibration started', 'success');
+            setTimeout(() => this.showPoint(), 500);
+        }
+
+        generateGrid(rows, cols) {
+            const points = [];
+            const margin = 0.1;
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    points.push({
+                        x: margin + (c / (cols - 1)) * (1 - 2 * margin),
+                        y: margin + (r / (rows - 1)) * (1 - 2 * margin)
+                    });
+                }
+            }
+            // Shuffle
+            for (let i = points.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [points[i], points[j]] = [points[j], points[i]];
+            }
+            return points;
+        }
+
+        showPoint() {
+            if (!this.isCalibrating || this.currentPoint >= this.calibPoints.length) return;
+            
+            const p = this.calibPoints[this.currentPoint];
+            const el = document.getElementById('calibPoint');
+            el.style.left = (p.x * 100) + '%';
+            el.style.top = (p.y * 100) + '%';
+            el.classList.add('active');
+            el.classList.remove('collecting');
+            
+            document.querySelector('.calibration-point .progress').style.strokeDashoffset = '188.5';
+            document.getElementById('sampleCounter').textContent = '0';
+            
+            this.currentSamples = 0;
+            this.isCollecting = false;
+            this.updateProgress();
+        }
+
+        onPointClick() {
+            if (!this.isCalibrating) return;
+            document.getElementById('calibPoint').classList.add('collecting');
+            this.isCollecting = true;
+            this.currentSamples = 0;
+            this.debug('Collecting...', 'success');
+        }
+
+        collectSample(features) {
+            if (!this.isCollecting) return;
+            
+            const p = this.calibPoints[this.currentPoint];
+            this.trainingData.features.push([...features]);
+            this.trainingData.targetsX.push(p.x);
+            this.trainingData.targetsY.push(p.y);
+            
+            this.currentSamples++;
+            
+            const progress = this.currentSamples / this.samplesPerPoint;
+            const offset = 188.5 * (1 - progress);
+            document.querySelector('.calibration-point .progress').style.strokeDashoffset = offset;
+            document.getElementById('sampleCounter').textContent = this.currentSamples;
+            
+            if (this.currentSamples >= this.samplesPerPoint) {
+                document.getElementById('calibPoint').classList.remove('collecting', 'active');
+                this.isCollecting = false;
+                this.currentPoint++;
+                this.updateProgress();
+                
+                this.debug(`Point ${this.currentPoint}/9 done`, 'success');
+                
+                if (this.currentPoint >= this.calibPoints.length) {
+                    this.finishCalibration();
+                } else {
+                    setTimeout(() => this.showPoint(), 300);
+                }
+            }
+            
+            document.getElementById('sampleCount').textContent = this.trainingData.features.length;
+        }
+
+        updateProgress() {
+            const pct = (this.currentPoint / this.calibPoints.length) * 100;
+            document.getElementById('calibProgress').style.width = pct + '%';
+            document.getElementById('calibProgressText').textContent = `${this.currentPoint} / ${this.calibPoints.length} points`;
+            document.getElementById('calibPoints').textContent = `${this.currentPoint} / ${this.calibPoints.length}`;
+        }
+
+        cancelCalibration() {
+            this.isCalibrating = false;
+            this.isCollecting = false;
+            document.getElementById('calibrationOverlay').classList.remove('active');
+            document.getElementById('calibPoint').classList.remove('active', 'collecting');
+            
+            if (this.model.trained) {
+                this.setStatus('calibrationStatus', 'active');
+                this.isTracking = true;
+                this.gazeCursor.classList.add('active');
+            }
+        }
+
+        finishCalibration() {
+            this.isCalibrating = false;
+            this.isCollecting = false;
+            document.getElementById('calibrationOverlay').classList.remove('active');
+            
+            this.trainModel();
+            
+            this.setStatus('calibrationStatus', 'active');
+            this.isTracking = true;
+            this.gazeCursor.classList.add('active');
+            document.getElementById('improveBtn').disabled = false;
+            
+            this.showNotification('Calibration complete!');
+        }
+
+        // Ridge Regression
+        trainModel() {
+            const X = this.trainingData.features;
+            const yX = this.trainingData.targetsX;
+            const yY = this.trainingData.targetsY;
+            
+            if (X.length < 9) {
+                this.debug('Not enough data', 'error');
+                return;
+            }
+            
+            this.debug('Training model...');
+            
+            // Simple ridge regression
+            const lambda = 0.1;
+            const n = X.length;
+            const d = X[0].length;
+            
+            // X'X
+            const XtX = Array(d).fill(0).map(() => Array(d).fill(0));
+            for (let i = 0; i < n; i++) {
+                for (let j = 0; j < d; j++) {
+                    for (let k = 0; k < d; k++) {
+                        XtX[j][k] += X[i][j] * X[i][k];
+                    }
+                }
+            }
+            
+            // Add regularization
+            for (let i = 0; i < d; i++) {
+                XtX[i][i] += lambda;
+            }
+            
+            // X'y
+            const XtyX = Array(d).fill(0);
+            const XtyY = Array(d).fill(0);
+            for (let i = 0; i < n; i++) {
+                for (let j = 0; j < d; j++) {
+                    XtyX[j] += X[i][j] * yX[i];
+                    XtyY[j] += X[i][j] * yY[i];
+                }
+            }
+            
+            // Solve using Gaussian elimination
+            this.model.weightsX = this.solve(XtX, XtyX);
+            this.model.weightsY = this.solve(this.copyMatrix(XtX), XtyY);
+            this.model.trained = true;
+            
+            // Calculate error
+            let errorX = 0, errorY = 0;
+            for (let i = 0; i < n; i++) {
+                const predX = this.dot(X[i], this.model.weightsX);
+                const predY = this.dot(X[i], this.model.weightsY);
+                errorX += Math.pow(predX - yX[i], 2);
+                errorY += Math.pow(predY - yY[i], 2);
+            }
+            const rmse = Math.sqrt((errorX + errorY) / (2 * n));
+            const pixelError = rmse * Math.sqrt(window.innerWidth * window.innerHeight);
+            
+            document.getElementById('modelAccuracy').textContent = '~' + Math.round(pixelError) + 'px';
+            this.debug('Model trained! Error: ~' + Math.round(pixelError) + 'px', 'success');
+        }
+
+        copyMatrix(m) {
+            return m.map(row => [...row]);
+        }
+
+        solve(A, b) {
+            const n = A.length;
+            const aug = A.map((row, i) => [...row, b[i]]);
+            
+            // Forward elimination
+            for (let i = 0; i < n; i++) {
+                let maxRow = i;
+                for (let k = i + 1; k < n; k++) {
+                    if (Math.abs(aug[k][i]) > Math.abs(aug[maxRow][i])) {
+                        maxRow = k;
+                    }
+                }
+                [aug[i], aug[maxRow]] = [aug[maxRow], aug[i]];
+                
+                for (let k = i + 1; k < n; k++) {
+                    const c = aug[k][i] / aug[i][i];
+                    for (let j = i; j <= n; j++) {
+                        aug[k][j] -= c * aug[i][j];
+                    }
+                }
+            }
+            
+            // Back substitution
+            const x = Array(n).fill(0);
+            for (let i = n - 1; i >= 0; i--) {
+                x[i] = aug[i][n];
+                for (let j = i + 1; j < n; j++) {
+                    x[i] -= aug[i][j] * x[j];
+                }
+                x[i] /= aug[i][i];
+            }
+            
+            return x;
+        }
+
+        dot(a, b) {
+            let sum = 0;
+            for (let i = 0; i < a.length; i++) sum += a[i] * b[i];
+            return sum;
+        }
+
+        predict(features) {
+            if (!this.model.trained) return;
+            
+            let predX = this.dot(features, this.model.weightsX);
+            let predY = this.dot(features, this.model.weightsY);
+            
+            predX = Math.max(0, Math.min(1, predX));
+            predY = Math.max(0, Math.min(1, predY));
+            
+            this.smoothedGaze.x += (predX - this.smoothedGaze.x) * this.smoothing;
+            this.smoothedGaze.y += (predY - this.smoothedGaze.y) * this.smoothing;
+            
+            this.gazeHistory.push({ x: this.smoothedGaze.x, y: this.smoothedGaze.y });
+            if (this.gazeHistory.length > 500) this.gazeHistory.shift();
+            
+            this.gazeCursor.style.left = (this.smoothedGaze.x * window.innerWidth) + 'px';
+            this.gazeCursor.style.top = (this.smoothedGaze.y * window.innerHeight) + 'px';
+        }
+
+        drawTrackingArea() {
+            const ctx = this.trackingCtx;
+            const w = this.trackingCanvas.width;
+            const h = this.trackingCanvas.height;
+            
+            ctx.clearRect(0, 0, w, h);
+            
+            // Grid
+            ctx.strokeStyle = 'rgba(0, 245, 212, 0.05)';
+            for (let x = 0; x < w; x += 50) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, h);
+                ctx.stroke();
+            }
+            for (let y = 0; y < h; y += 50) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(w, y);
+                ctx.stroke();
+            }
+            
+            if (this.showHeatmap && this.gazeHistory.length > 0) {
+                const res = 20;
+                const grid = Array(res).fill(0).map(() => Array(res).fill(0));
+                let max = 1;
+                
+                for (const p of this.gazeHistory) {
+                    const cx = Math.floor(p.x * res);
+                    const cy = Math.floor(p.y * res);
+                    if (cx >= 0 && cx < res && cy >= 0 && cy < res) {
+                        grid[cy][cx]++;
+                        max = Math.max(max, grid[cy][cx]);
+                    }
+                }
+                
+                for (let y = 0; y < res; y++) {
+                    for (let x = 0; x < res; x++) {
+                        if (grid[y][x] > 0) {
+                            ctx.fillStyle = `rgba(247, 37, 133, ${grid[y][x] / max * 0.5})`;
+                            ctx.fillRect(x * w / res, y * h / res, w / res, h / res);
+                        }
+                    }
+                }
+            }
+            
+            if (this.showTrail && this.gazeHistory.length > 1) {
+                ctx.strokeStyle = 'rgba(0, 245, 212, 0.3)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(this.gazeHistory[0].x * w, this.gazeHistory[0].y * h);
+                for (const p of this.gazeHistory) {
+                    ctx.lineTo(p.x * w, p.y * h);
+                }
+                ctx.stroke();
+            }
+            
+            if (this.model.trained && this.isTracking) {
+                const gx = this.smoothedGaze.x * w;
+                const gy = this.smoothedGaze.y * h;
+                
+                const grad = ctx.createRadialGradient(gx, gy, 0, gx, gy, 30);
+                grad.addColorStop(0, 'rgba(0, 245, 212, 0.5)');
+                grad.addColorStop(1, 'rgba(0, 245, 212, 0)');
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(gx, gy, 30, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = '#00f5d4';
+                ctx.beginPath();
+                ctx.arc(gx, gy, 8, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        clearData() {
+            this.trainingData = { features: [], targetsX: [], targetsY: [] };
+            this.model = { weightsX: null, weightsY: null, trained: false };
+            this.gazeHistory = [];
+            
+            document.getElementById('sampleCount').textContent = '0';
+            document.getElementById('modelAccuracy').textContent = '--';
+            document.getElementById('calibPoints').textContent = '0 / 9';
+            
+            this.setStatus('calibrationStatus', '');
+            this.isTracking = false;
+            this.gazeCursor.classList.remove('active');
+            document.getElementById('improveBtn').disabled = true;
+            
+            this.showNotification('Data cleared');
+        }
+    }
+
+    window.addEventListener('load', () => {
+        window.tracker = new GazeTracker();
+    });
+    </script>
+</body>
+</html>

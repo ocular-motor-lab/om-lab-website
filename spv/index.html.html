@@ -6,18 +6,18 @@
   <title>Nystagmus Velocity Analyzer</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   
-  <!-- Core React -->
-  <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+  <!-- Core React from cdnjs -->
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   
-  <!-- PropTypes (required by Recharts) -->
-  <script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js" crossorigin></script>
+  <!-- PropTypes from cdnjs -->
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/prop-types/15.8.1/prop-types.min.js"></script>
   
-  <!-- Recharts -->
-  <script src="https://unpkg.com/recharts@2.5.0/umd/Recharts.min.js" crossorigin></script>
+  <!-- Recharts from jsdelivr -->
+  <script crossorigin src="https://cdn.jsdelivr.net/npm/recharts@2.5.0/umd/Recharts.min.js"></script>
   
-  <!-- Babel for JSX -->
-  <script src="https://unpkg.com/@babel/standalone@7.23.5/babel.min.js"></script>
+  <!-- Babel from cdnjs -->
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
   
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -235,13 +235,20 @@
         return parsedData.sort((a, b) => a.time - b.time);
       }, []);
 
+      // Normalize time after parsing
+      const normalizeTime = useCallback((data) => {
+        if (data.length === 0) return data;
+        const firstTime = data[0].time;
+        return data.map(d => ({ ...d, time: d.time - firstTime }));
+      }, []);
+
       const handleFileUpload = useCallback((event) => {
         const file = event.target.files[0];
         if (!file) return;
         setFileName(file.name);
         const reader = new FileReader();
         reader.onload = (e) => {
-          const parsed = parseCSV(e.target.result);
+          const parsed = normalizeTime(parseCSV(e.target.result));
           setRawData(parsed);
           const hasRight = parsed.some(d => !isNaN(d.rightEyeX) && !isNaN(d.rightEyeY));
           const hasLeft = parsed.some(d => !isNaN(d.leftEyeX) && !isNaN(d.leftEyeY));
@@ -255,7 +262,7 @@
         };
         reader.readAsText(file);
         event.target.value = '';
-      }, [parseCSV, processDataForEye, detectionParams]);
+      }, [parseCSV, normalizeTime, processDataForEye, detectionParams]);
 
       const handleEyeChange = useCallback((eye) => {
         setSelectedEye(eye);
@@ -346,7 +353,7 @@
                     <button className={`eye-btn ${selectedEye === 'left' ? 'active' : ''}`} onClick={() => handleEyeChange('left')} disabled={!availableEyes.left}>Left Eye</button>
                   </div>
                 )}
-                <input ref={fileInputRef} type="file" accept=".csv" onChange={handleFileUpload} style={{ display: 'none' }} />
+                <input ref={fileInputRef} type="file" accept=".csv,.txt" onChange={handleFileUpload} style={{ display: 'none' }} />
                 <button className="btn btn-primary" onClick={() => fileInputRef.current?.click()}><Icons.Upload />Upload CSV</button>
                 {data.length > 0 && (
                   <>

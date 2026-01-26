@@ -346,7 +346,7 @@
                     <button className={`eye-btn ${selectedEye === 'left' ? 'active' : ''}`} onClick={() => handleEyeChange('left')} disabled={!availableEyes.left}>Left Eye</button>
                   </div>
                 )}
-                <input ref={fileInputRef} type="file" accept=".csv" onChange={handleFileUpload} style={{ display: 'none' }} />
+                <input ref={fileInputRef} type="file" accept=".csv,.txt" onChange={handleFileUpload} style={{ display: 'none' }} />
                 <button className="btn btn-primary" onClick={() => fileInputRef.current?.click()}><Icons.Upload />Upload CSV</button>
                 {data.length > 0 && (
                   <>

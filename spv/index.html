@@ -230,7 +230,42 @@
 
       const processDataForEye = useCallback((raw, eye) => {
         if (!raw || raw.length === 0) return [];
+        if (eye === 'both') {
+          // Return data with both eyes for visualization
+          return raw.map(row => ({
+            time: row.time,
+            horizontal: row.rightEyeX,
+            vertical: row.rightEyeY,
+            horizontalLeft: row.leftEyeX,
+            verticalLeft: row.leftEyeY
+          })).filter(d => !isNaN(d.horizontal) && !isNaN(d.vertical));
+        }
         return raw.map(row => ({ time: row.time, horizontal: eye === 'right' ? row.rightEyeX : row.leftEyeX, vertical: eye === 'right' ? row.rightEyeY : row.leftEyeY })).filter(d => !isNaN(d.horizontal) && !isNaN(d.vertical));
+      }, []);
+
+      // Get combined data from both eyes for detection (averages both eyes)
+      const getCombinedDataForDetection = useCallback((raw) => {
+        if (!raw || raw.length === 0) return [];
+        const hasRight = raw.some(d => !isNaN(d.rightEyeX) && !isNaN(d.rightEyeY));
+        const hasLeft = raw.some(d => !isNaN(d.leftEyeX) && !isNaN(d.leftEyeY));
+        
+        return raw.map(row => {
+          let horizontal, vertical;
+          if (hasRight && hasLeft && !isNaN(row.rightEyeX) && !isNaN(row.leftEyeX)) {
+            // Average both eyes
+            horizontal = (row.rightEyeX + row.leftEyeX) / 2;
+            vertical = (row.rightEyeY + row.leftEyeY) / 2;
+          } else if (hasRight && !isNaN(row.rightEyeX)) {
+            horizontal = row.rightEyeX;
+            vertical = row.rightEyeY;
+          } else if (hasLeft && !isNaN(row.leftEyeX)) {
+            horizontal = row.leftEyeX;
+            vertical = row.leftEyeY;
+          } else {
+            return null;
+          }
+          return { time: row.time, horizontal, vertical };
+        }).filter(d => d !== null);
       }, []);
 
       const parseCSV = useCallback((text) => {
@@ -273,30 +308,38 @@
           setRawData(parsed);
           const hasRight = parsed.some(d => !isNaN(d.rightEyeX) && !isNaN(d.rightEyeY));
           const hasLeft = parsed.some(d => !isNaN(d.leftEyeX) && !isNaN(d.leftEyeY));
-          const eye = hasRight ? 'right' : (hasLeft ? 'left' : 'right');
+          
+          const eye = (hasRight && hasLeft) ? 'both' : (hasRight ? 'right' : 'left');
           setSelectedEye(eye);
+          
           const processed = processDataForEye(parsed, eye);
           setData(processed);
           setSelectedPhase(null);
           setEditingPhase(null);
-          if (processed.length > 0) { setSlowPhases(detectSlowPhases(processed, detectionParams)); }
+          
+          // Use combined data from both eyes for detection
+          const combinedData = getCombinedDataForDetection(parsed);
+          if (combinedData.length > 0) { setSlowPhases(detectSlowPhases(combinedData, detectionParams)); }
         };
         reader.readAsText(file);
         event.target.value = '';
-      }, [parseCSV, normalizeTime, processDataForEye, detectionParams]);
+      }, [parseCSV, normalizeTime, processDataForEye, getCombinedDataForDetection, detectionParams]);
 
       const handleEyeChange = useCallback((eye) => {
         setSelectedEye(eye);
         const processed = processDataForEye(rawData, eye);
         setData(processed);
-        setSelectedPhase(null);
-        setEditingPhase(null);
-        if (processed.length > 0) { setSlowPhases(detectSlowPhases(processed, detectionParams)); }
-      }, [rawData, processDataForEye, detectionParams]);
+        // Don't recalculate phases - they are shared across both eyes
+      }, [rawData, processDataForEye]);
 
       const recalculatePhases = useCallback(() => {
-        if (data.length > 0) { setSlowPhases(detectSlowPhases(data, detectionParams)); setSelectedPhase(null); setEditingPhase(null); }
-      }, [data, detectionParams]);
+        const combinedData = getCombinedDataForDetection(rawData);
+        if (combinedData.length > 0) { 
+          setSlowPhases(detectSlowPhases(combinedData, detectionParams)); 
+          setSelectedPhase(null); 
+          setEditingPhase(null); 
+        }
+      }, [rawData, getCombinedDataForDetection, detectionParams]);
 
       const statistics = useMemo(() => {
         if (slowPhases.length === 0) return { count: 0, avgHorizontalVelocity: 0, avgVerticalVelocity: 0, avgSpeed: 0, totalDuration: 0, stdSpeed: 0 };
@@ -352,6 +395,7 @@
         if (resizing) {
           // Update the phase edge being resized
           const newTime = e.activeLabel;
+          const combinedData = getCombinedDataForDetection(rawData);
           setSlowPhases(prev => prev.map(p => {
             if (p.id !== resizing.phaseId) return p;
             let newStart = p.startTime;
@@ -361,7 +405,7 @@
             } else {
               newEnd = Math.max(newTime, p.startTime + 0.001);
             }
-            const velocities = calculatePhaseVelocity(data, newStart, newEnd);
+            const velocities = calculatePhaseVelocity(combinedData, newStart, newEnd);
             return { ...p, startTime: newStart, endTime: newEnd, duration: newEnd - newStart, ...velocities };
           }));
           return;
@@ -369,7 +413,7 @@
         
         if (!isAddingPhase || dragStart === null) return;
         setDragEnd(e.activeLabel);
-      }, [isAddingPhase, dragStart, resizing, data]);
+      }, [isAddingPhase, dragStart, resizing, rawData, getCombinedDataForDetection]);
 
       const handleMouseUp = useCallback(() => {
         if (resizing) {
@@ -380,13 +424,14 @@
         if (!isAddingPhase || dragStart === null || dragEnd === null) return;
         const startTime = Math.min(dragStart, dragEnd), endTime = Math.max(dragStart, dragEnd);
         if (endTime - startTime < 0.001) { setDragStart(null); setDragEnd(null); return; }
-        const velocities = calculatePhaseVelocity(data, startTime, endTime);
+        const combinedData = getCombinedDataForDetection(rawData);
+        const velocities = calculatePhaseVelocity(combinedData, startTime, endTime);
         const newPhase = { id: `phase-manual-${Date.now()}`, startTime, endTime, duration: endTime - startTime, ...velocities };
         setSlowPhases(prev => [...prev, newPhase].sort((a, b) => a.startTime - b.startTime));
         setSelectedPhase(newPhase.id);
         setDragStart(null); setDragEnd(null);
         // Don't turn off adding mode - allow continuous adding
-      }, [isAddingPhase, dragStart, dragEnd, data, resizing]);
+      }, [isAddingPhase, dragStart, dragEnd, rawData, getCombinedDataForDetection, resizing]);
 
       const deletePhase = useCallback((id, e) => { e?.stopPropagation(); setSlowPhases(prev => prev.filter(p => p.id !== id)); if (selectedPhase === id) setSelectedPhase(null); if (editingPhase === id) setEditingPhase(null); }, [selectedPhase, editingPhase]);
       const startEditingPhase = useCallback((phase, e) => { e?.stopPropagation(); setEditingPhase(phase.id); setTempEditValues({ startTime: phase.startTime.toFixed(4), endTime: phase.endTime.toFixed(4) }); }, []);
@@ -395,28 +440,29 @@
         if (!editingPhase) return;
         const startTime = parseFloat(tempEditValues.startTime), endTime = parseFloat(tempEditValues.endTime);
         if (isNaN(startTime) || isNaN(endTime) || startTime >= endTime) { alert('Invalid time values.'); return; }
-        const velocities = calculatePhaseVelocity(data, startTime, endTime);
+        const combinedData = getCombinedDataForDetection(rawData);
+        const velocities = calculatePhaseVelocity(combinedData, startTime, endTime);
         setSlowPhases(prev => prev.map(p => { if (p.id === editingPhase) { return { ...p, startTime, endTime, duration: endTime - startTime, ...velocities }; } return p; }).sort((a, b) => a.startTime - b.startTime));
         setEditingPhase(null);
-      }, [editingPhase, tempEditValues, data]);
+      }, [editingPhase, tempEditValues, rawData, getCombinedDataForDetection]);
       const cancelEditing = useCallback((e) => { e?.stopPropagation(); setEditingPhase(null); }, []);
 
       const exportJSON = useCallback(() => {
-        const exportObj = { fileName, selectedEye, exportDate: new Date().toISOString(), detectionParameters: detectionParams, statistics: { numberOfSlowPhases: statistics.count, averageHorizontalVelocity_degPerSec: statistics.avgHorizontalVelocity, averageVerticalVelocity_degPerSec: statistics.avgVerticalVelocity, averageSlowPhaseVelocity_degPerSec: statistics.avgSpeed, standardDeviation_degPerSec: statistics.stdSpeed, totalSlowPhaseDuration_sec: statistics.totalDuration }, slowPhases: slowPhases.map(p => ({ startTime_sec: p.startTime, endTime_sec: p.endTime, duration_sec: p.duration, horizontalVelocity_degPerSec: p.avgHorizontalVelocity, verticalVelocity_degPerSec: p.avgVerticalVelocity, speed_degPerSec: p.avgSpeed })), rawDataPoints: data.length };
+        const exportObj = { fileName, viewingEye: selectedEye, phasesApplyTo: 'both', exportDate: new Date().toISOString(), detectionParameters: detectionParams, statistics: { numberOfSlowPhases: statistics.count, averageHorizontalVelocity_degPerSec: statistics.avgHorizontalVelocity, averageVerticalVelocity_degPerSec: statistics.avgVerticalVelocity, averageSlowPhaseVelocity_degPerSec: statistics.avgSpeed, standardDeviation_degPerSec: statistics.stdSpeed, totalSlowPhaseDuration_sec: statistics.totalDuration }, slowPhases: slowPhases.map(p => ({ startTime_sec: p.startTime, endTime_sec: p.endTime, duration_sec: p.duration, horizontalVelocity_degPerSec: p.avgHorizontalVelocity, verticalVelocity_degPerSec: p.avgVerticalVelocity, speed_degPerSec: p.avgSpeed })), rawDataPoints: data.length };
         const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = `nystagmus-analysis-${selectedEye}-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(url);
+        const a = document.createElement('a'); a.href = url; a.download = `nystagmus-analysis-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(url);
       }, [fileName, selectedEye, detectionParams, statistics, slowPhases, data]);
 
       const exportCSV = useCallback(() => {
         const headers = ['Phase #', 'Start Time (s)', 'End Time (s)', 'Duration (s)', 'H Velocity (deg/s)', 'V Velocity (deg/s)', 'Speed (deg/s)'];
         const rows = slowPhases.map((p, i) => [i + 1, p.startTime.toFixed(4), p.endTime.toFixed(4), p.duration.toFixed(4), p.avgHorizontalVelocity.toFixed(3), p.avgVerticalVelocity.toFixed(3), p.avgSpeed.toFixed(3)]);
-        rows.push([]); rows.push(['Summary']); rows.push(['Eye', selectedEye]); rows.push(['Total Slow Phases', statistics.count]); rows.push(['Avg Speed (deg/s)', statistics.avgSpeed.toFixed(3)]);
+        rows.push([]); rows.push(['Summary']); rows.push(['Phases Apply To', 'Both Eyes']); rows.push(['Total Slow Phases', statistics.count]); rows.push(['Avg Speed (deg/s)', statistics.avgSpeed.toFixed(3)]);
         const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
         const blob = new Blob([csvContent], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = `slow-phases-${selectedEye}-${new Date().toISOString().slice(0,10)}.csv`; a.click(); URL.revokeObjectURL(url);
-      }, [slowPhases, selectedEye, statistics]);
+        const a = document.createElement('a'); a.href = url; a.download = `slow-phases-${new Date().toISOString().slice(0,10)}.csv`; a.click(); URL.revokeObjectURL(url);
+      }, [slowPhases, statistics]);
 
       const chartData = useMemo(() => { if (data.length <= 2000) return data; const step = Math.ceil(data.length / 2000); return data.filter((_, i) => i % step === 0); }, [data]);
       const positionRange = useMemo(() => { if (data.length === 0) return { min: -10, max: 10 }; let minVal = Infinity, maxVal = -Infinity; data.forEach(d => { if (d.horizontal < minVal) minVal = d.horizontal; if (d.horizontal > maxVal) maxVal = d.horizontal; if (d.vertical < minVal) minVal = d.vertical; if (d.vertical > maxVal) maxVal = d.vertical; }); const padding = (maxVal - minVal) * 0.1 || 1; return { min: minVal - padding, max: maxVal + padding }; }, [data]);
@@ -431,13 +477,14 @@
                   <span style={{ color: '#38bdf8' }}><Icons.BarChart3 /></span>
                   Nystagmus Velocity Analyzer
                 </h1>
-                {fileName && <p style={{ fontSize: '14px', color: '#64748b', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}><Icons.FileText />{fileName} • {data.length.toLocaleString()} samples • {selectedEye.charAt(0).toUpperCase() + selectedEye.slice(1)} Eye</p>}
+                {fileName && <p style={{ fontSize: '14px', color: '#64748b', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}><Icons.FileText />{fileName} • {data.length.toLocaleString()} samples • {selectedEye === 'both' ? 'Both Eyes' : (selectedEye.charAt(0).toUpperCase() + selectedEye.slice(1) + ' Eye')}</p>}
               </div>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
                 {data.length > 0 && (
                   <div className="eye-selector">
                     <button className={`eye-btn ${selectedEye === 'right' ? 'active' : ''}`} onClick={() => handleEyeChange('right')} disabled={!availableEyes.right}>Right Eye</button>
                     <button className={`eye-btn ${selectedEye === 'left' ? 'active' : ''}`} onClick={() => handleEyeChange('left')} disabled={!availableEyes.left}>Left Eye</button>
+                    <button className={`eye-btn ${selectedEye === 'both' ? 'active' : ''}`} onClick={() => handleEyeChange('both')} disabled={!availableEyes.right || !availableEyes.left}>Both</button>
                   </div>
                 )}
                 <input ref={fileInputRef} type="file" accept=".csv,.txt" onChange={handleFileUpload} style={{ display: 'none' }} />
@@ -497,7 +544,7 @@
 
                 <div className="panel panel-glow" style={{ padding: '24px', marginBottom: '24px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
-                    <h3 style={{ fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '10px' }}><span style={{ color: '#38bdf8' }}><Icons.Eye /></span>Eye Position ({selectedEye.charAt(0).toUpperCase() + selectedEye.slice(1)} Eye)</h3>
+                    <h3 style={{ fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '10px' }}><span style={{ color: '#38bdf8' }}><Icons.Eye /></span>Eye Position ({selectedEye === 'both' ? 'Both Eyes' : (selectedEye.charAt(0).toUpperCase() + selectedEye.slice(1) + ' Eye')})</h3>
                     <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <button className={`toggle-btn ${showHorizontal ? 'active' : ''}`} onClick={() => setShowHorizontal(!showHorizontal)}>{showHorizontal ? <Icons.Eye /> : <Icons.EyeOff />}Horizontal</button>
@@ -517,16 +564,29 @@
                         <Tooltip content={<CustomTooltip />} />
                         {slowPhases.map((phase) => (<ReferenceArea key={phase.id} x1={phase.startTime} x2={phase.endTime} fill={selectedPhase === phase.id ? "rgba(56, 189, 248, 0.25)" : "rgba(34, 197, 94, 0.15)"} stroke={selectedPhase === phase.id ? "#38bdf8" : "#22c55e"} strokeWidth={selectedPhase === phase.id ? 2 : 1} strokeDasharray={selectedPhase === phase.id ? "0" : "3 3"} style={{ cursor: 'pointer' }} />))}
                         {isAddingPhase && dragStart !== null && dragEnd !== null && (<ReferenceArea x1={Math.min(dragStart, dragEnd)} x2={Math.max(dragStart, dragEnd)} fill="rgba(251, 191, 36, 0.2)" stroke="#fbbf24" strokeWidth={2} />)}
-                        {showHorizontal && <Line type="monotone" dataKey="horizontal" stroke="#38bdf8" dot={false} strokeWidth={1.5} name="Horizontal (X)" isAnimationActive={false} />}
-                        {showVertical && <Line type="monotone" dataKey="vertical" stroke="#f472b6" dot={false} strokeWidth={1.5} name="Vertical (Y)" isAnimationActive={false} />}
+                        {showHorizontal && <Line type="monotone" dataKey="horizontal" stroke="#38bdf8" dot={false} strokeWidth={1.5} name={selectedEye === 'both' ? "Horizontal R" : "Horizontal (X)"} isAnimationActive={false} />}
+                        {showVertical && <Line type="monotone" dataKey="vertical" stroke="#f472b6" dot={false} strokeWidth={1.5} name={selectedEye === 'both' ? "Vertical R" : "Vertical (Y)"} isAnimationActive={false} />}
+                        {selectedEye === 'both' && showHorizontal && <Line type="monotone" dataKey="horizontalLeft" stroke="#22d3ee" dot={false} strokeWidth={1.5} name="Horizontal L" isAnimationActive={false} />}
+                        {selectedEye === 'both' && showVertical && <Line type="monotone" dataKey="verticalLeft" stroke="#e879f9" dot={false} strokeWidth={1.5} name="Vertical L" isAnimationActive={false} />}
                         <Brush dataKey="time" height={40} stroke="rgba(56, 189, 248, 0.5)" fill="rgba(15, 23, 42, 0.8)" />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
                   <div style={{ display: 'flex', gap: '24px', marginTop: '16px', fontSize: '13px', color: '#94a3b8', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><div style={{ width: '24px', height: '3px', background: '#38bdf8', borderRadius: '2px' }} />Horizontal (X)</div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><div style={{ width: '24px', height: '3px', background: '#f472b6', borderRadius: '2px' }} />Vertical (Y)</div>
+                    <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                      {selectedEye === 'both' ? (
+                        <>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><div style={{ width: '20px', height: '3px', background: '#38bdf8', borderRadius: '2px' }} />H Right</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><div style={{ width: '20px', height: '3px', background: '#22d3ee', borderRadius: '2px' }} />H Left</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><div style={{ width: '20px', height: '3px', background: '#f472b6', borderRadius: '2px' }} />V Right</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><div style={{ width: '20px', height: '3px', background: '#e879f9', borderRadius: '2px' }} />V Left</div>
+                        </>
+                      ) : (
+                        <>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><div style={{ width: '24px', height: '3px', background: '#38bdf8', borderRadius: '2px' }} />Horizontal (X)</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><div style={{ width: '24px', height: '3px', background: '#f472b6', borderRadius: '2px' }} />Vertical (Y)</div>
+                        </>
+                      )}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><div style={{ width: '24px', height: '12px', background: 'rgba(34, 197, 94, 0.3)', border: '1px dashed #22c55e', borderRadius: '2px' }} />Slow Phase</div>
                     </div>
                     <div style={{ fontSize: '11px', color: '#64748b' }}>Click phase to select • Drag edges to resize • Delete key to remove</div>

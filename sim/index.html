@@ -193,13 +193,13 @@
 
 <script>
 // ── Backend URL resolution ────────────────────────────────────────────────────
-// Priority: ?backend= URL param  >  localStorage  >  http://localhost:8000
+// Priority: ?backend= URL param  >  localStorage  > https://giggling-confused-thriving.ngrok-free.dev/
 function getBackend() {
   const param = new URLSearchParams(window.location.search).get('backend');
   if (param) return param.replace(/\/$/, '');
   const stored = localStorage.getItem('oculomotor_backend');
   if (stored) return stored;
-  return 'http://localhost:8000';
+  return 'https://giggling-confused-thriving.ngrok-free.dev/';
 }
 
 function saveBackend() {

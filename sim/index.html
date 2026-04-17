@@ -129,7 +129,7 @@
 
   /* Avatar section */
   #avatar-section {
-    display: none; margin-top: 20px;
+    display: none; margin-bottom: 20px;
     border: 1px solid #2a2d3a; border-radius: 10px; overflow: hidden;
     background: #111118;
   }
@@ -144,19 +144,30 @@
     font-size: 1rem; flex-shrink: 0; align-self: auto;
   }
   #play-btn:hover { border-color: #4a6cf7; color: #fff; background: #2a2e45; }
-  #scrubber {
-    flex: 1; accent-color: #4a6cf7; height: 4px; cursor: pointer;
-  }
+  #scrubber { flex: 1; accent-color: #4a6cf7; height: 4px; cursor: pointer; }
   #time-display {
     font-size: 0.75rem; color: #777; font-family: monospace;
     white-space: nowrap; flex-shrink: 0;
   }
   #avatar-loading {
-    position: absolute; font-size: 0.8rem; color: #555;
-    pointer-events: none;
+    position: absolute; font-size: 0.8rem; color: #555; pointer-events: none;
   }
-  .avatar-wrap { position: relative; display: flex;
-                 align-items: center; justify-content: center; }
+  .avatar-wrap {
+    position: relative; display: flex; align-items: center; justify-content: center;
+  }
+  /* Divider line between the two viewports */
+  .avatar-wrap::after {
+    content: ''; position: absolute; top: 0; bottom: 0; left: 50%;
+    width: 1px; background: #2a2d3a; pointer-events: none;
+  }
+  .avatar-labels {
+    position: absolute; top: 8px; left: 0; right: 0;
+    display: flex; pointer-events: none; z-index: 1;
+  }
+  .avatar-labels span {
+    flex: 1; text-align: center; font-size: 0.7rem; color: #555;
+    text-transform: uppercase; letter-spacing: 0.08em;
+  }
 </style>
 </head>
 <body>
@@ -192,14 +203,15 @@
 
   <div class="result" id="result">
 
-    <!-- Simulation plot -->
-    <img id="plot" src="" alt="Simulation plot">
-
-    <!-- 3D Avatar + playback (single mode only) -->
+    <!-- 3D Avatar + playback (single mode only, shown above plot) -->
     <div id="avatar-section">
       <div class="avatar-wrap">
         <canvas id="avatar-canvas"></canvas>
         <span id="avatar-loading">Loading avatar…</span>
+        <div class="avatar-labels">
+          <span>World view</span>
+          <span>Head-fixed</span>
+        </div>
       </div>
       <div id="playback-bar">
         <button id="play-btn" onclick="togglePlay()" title="Play / Pause">▶</button>
@@ -208,6 +220,10 @@
         <span id="time-display">0.0 / 0.0 s</span>
       </div>
     </div>
+
+    <!-- Simulation plot -->
+    <img id="plot" src="" alt="Simulation plot"
+         style="width:100%;border-radius:8px;border:1px solid #2a2d3a;margin-top:20px;">
 
     <!-- Feedback -->
     <div class="feedback-section" id="feedback-section">
@@ -378,51 +394,46 @@ document.addEventListener('DOMContentLoaded', () => {
 }
 </script>
 <script type="module">
-import * as THREE        from 'three';
-import { GLTFLoader }    from 'three/addons/loaders/GLTFLoader.js';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import * as THREE     from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-// ── Scene ─────────────────────────────────────────────────────────────────────
+// ── Renderer + scene ──────────────────────────────────────────────────────────
 const canvas   = document.getElementById('avatar-canvas');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.autoClear = false;   // we clear manually between viewports
 
-const W = () => canvas.clientWidth || 800;
+const W = () => canvas.clientWidth  || 820;
 const H = () => canvas.clientHeight || 420;
 
-const scene  = new THREE.Scene();
+const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x111118);
 
-const camera = new THREE.PerspectiveCamera(28, W() / H(), 0.001, 10000);
-camera.position.set(0, 0, 1);
+// Two cameras — world view (left) and head-fixed view (right)
+const worldCam = new THREE.PerspectiveCamera(28, W() / 2 / H(), 0.001, 10000);
+const headCam  = new THREE.PerspectiveCamera(28, W() / 2 / H(), 0.001, 10000);
 
 function resize() {
   renderer.setSize(W(), H(), false);
-  camera.aspect = W() / H();
-  camera.updateProjectionMatrix();
+  const a = W() / 2 / H();
+  worldCam.aspect = a; worldCam.updateProjectionMatrix();
+  headCam.aspect  = a; headCam.updateProjectionMatrix();
 }
 new ResizeObserver(resize).observe(canvas);
 resize();
 
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.dampingFactor = 0.08;
-controls.enablePan     = true;
-
 scene.add(new THREE.AmbientLight(0xffffff, 0.7));
 const key = new THREE.DirectionalLight(0xffffff, 1.4);
 key.position.set(1, 3, 2); scene.add(key);
-const fill = new THREE.DirectionalLight(0x8899ff, 0.4);
-fill.position.set(-2, 1, 1); scene.add(fill);
+scene.add(new THREE.DirectionalLight(0x8899ff, 0.4)).position.set(-2, 1, 1);
 
 // ── Avatar ────────────────────────────────────────────────────────────────────
 let leftEyeBone  = null;
 let rightEyeBone = null;
-let restL = null, restR = null;
-let modelLoaded  = false;
+let headBone     = null;
+let restL = null, restR = null, restHead = null;
 
-// Resolve avatar path: works both under FastAPI (served at /) and GitHub Pages
 const AVATAR_PATH = 'ready_player_me_male_avatar__vrchatgame_ready/scene.gltf';
 
 new GLTFLoader().load(AVATAR_PATH, (gltf) => {
@@ -432,47 +443,55 @@ new GLTFLoader().load(AVATAR_PATH, (gltf) => {
   model.traverse(obj => {
     if (obj.name === 'LeftEye_08')  leftEyeBone  = obj;
     if (obj.name === 'RightEye_09') rightEyeBone = obj;
+    if (obj.name === 'Head_06')     headBone     = obj;
   });
 
-  if (leftEyeBone && rightEyeBone) {
-    restL = leftEyeBone.rotation.clone();
-    restR = rightEyeBone.rotation.clone();
-  }
+  if (leftEyeBone)  restL    = leftEyeBone.rotation.clone();
+  if (rightEyeBone) restR    = rightEyeBone.rotation.clone();
+  if (headBone)     restHead = headBone.rotation.clone();
+  console.log('Bones found — head:', !!headBone, 'leftEye:', !!leftEyeBone, 'rightEye:', !!rightEyeBone);
+  console.log('restHead:', restHead);
 
-  // Auto-fit camera to face
-  const box    = new THREE.Box3().setFromObject(model);
-  const size   = box.getSize(new THREE.Vector3());
-  const center = box.getCenter(new THREE.Vector3());
-  const faceY  = box.min.y + size.y * 0.93;
-  const target = new THREE.Vector3(center.x, faceY, center.z);
+  // Use actual eye bone world positions for precise camera targeting
+  const box  = new THREE.Box3().setFromObject(model);
+  const size = box.getSize(new THREE.Vector3());
+  const near = size.y * 0.001, far = size.y * 20;
 
-  controls.target.copy(target);
-  camera.position.set(center.x, faceY, center.z + size.y * 0.18);
-  camera.near = size.y * 0.001;
-  camera.far  = size.y * 20;
-  camera.updateProjectionMatrix();
-  controls.update();
+  const posL = new THREE.Vector3(), posR = new THREE.Vector3();
+  leftEyeBone.getWorldPosition(posL);
+  rightEyeBone.getWorldPosition(posR);
+  const eyeMid = new THREE.Vector3().addVectors(posL, posR).multiplyScalar(0.5);
+
+  // Head-fixed (right): close-up, eye midpoint target
+  headCam.position.set(eyeMid.x, eyeMid.y, eyeMid.z + size.y * 0.18);
+  headCam.lookAt(eyeMid);
+  headCam.near = near; headCam.far = far; headCam.updateProjectionMatrix();
+
+  // World (left): further back so neck is visible, same target
+  worldCam.position.set(eyeMid.x, eyeMid.y, eyeMid.z + size.y * 0.26);
+  worldCam.lookAt(eyeMid);
+  worldCam.near = near; worldCam.far = far; worldCam.updateProjectionMatrix();
 
   document.getElementById('avatar-loading').style.display = 'none';
-  modelLoaded = true;
 
-}, undefined, (err) => {
+}, undefined, err => {
   console.error('Avatar load error:', err);
   document.getElementById('avatar-loading').textContent = 'Avatar failed to load';
 });
 
-// ── Eye rotation ──────────────────────────────────────────────────────────────
-// Simulation convention: [yaw, pitch, roll] in degrees
-//   yaw   > 0 = rightward gaze   → bone rotation.y
-//   pitch > 0 = upward gaze      → bone rotation.x
-// Sign determined by avatar rig (may need flipping — check with saccade demo)
+// ── Bone application ──────────────────────────────────────────────────────────
 const DEG = Math.PI / 180;
 
-function applyEyes(L, R) {
-  if (!leftEyeBone || !rightEyeBone) return;
+// eye_pos in simulation = head-fixed plant state [yaw, pitch, roll] deg
+// head_pos              = integrated head velocity [yaw, pitch, roll] deg
+function applyFrame(fi) {
+  if (!leftEyeBone || !rightEyeBone || !_traj) return;
+  const L = _traj.left[fi];
+  const R = _traj.right[fi];
+
   leftEyeBone.rotation.set(
-    restL.x - L[1] * DEG,
-    restL.y - L[0] * DEG,
+    restL.x - L[1] * DEG,   // pitch
+    restL.y - L[0] * DEG,   // yaw
     restL.z
   );
   rightEyeBone.rotation.set(
@@ -480,38 +499,49 @@ function applyEyes(L, R) {
     restR.y - R[0] * DEG,
     restR.z
   );
+
+  // Head rotation for world view (applied before left render, removed before right)
+  if (headBone && _traj.head) {
+    const Hd = _traj.head[fi];
+    headBone.rotation.set(
+      restHead.x - Hd[1] * DEG,   // pitch
+      restHead.y - Hd[0] * DEG,   // yaw
+      restHead.z
+    );
+  }
 }
 
-// ── Playback state ────────────────────────────────────────────────────────────
-let _traj        = null;   // {fps, n_frames, duration_s, left, right}
-let _frame       = 0;      // float, current frame (may be fractional)
-let _playing     = false;
-let _lastRafTs   = null;   // last RAF timestamp while playing
+// ── Playback ──────────────────────────────────────────────────────────────────
+let _traj      = null;
+let _frame     = 0;
+let _playing   = false;
+let _lastRafTs = null;
 
 function updateTimeDisplay(fi) {
   if (!_traj) return;
-  const cur = (fi / _traj.fps).toFixed(1);
-  const tot = _traj.duration_s.toFixed(1);
-  document.getElementById('time-display').textContent = `${cur} / ${tot} s`;
+  document.getElementById('time-display').textContent =
+    `${(fi / _traj.fps).toFixed(1)} / ${_traj.duration_s.toFixed(1)} s`;
 }
 
-// Exposed to main (non-module) script via window
 window.loadEyeTrajectory = function(traj) {
   _traj    = traj;
   _frame   = 0;
   _playing = false;
-  document.getElementById('play-btn').textContent     = '▶';
-  document.getElementById('scrubber').max             = traj.n_frames - 1;
-  document.getElementById('scrubber').value           = 0;
+  console.log('Trajectory loaded — frames:', traj.n_frames, 'has head:', !!traj.head,
+              'head[0]:', traj.head ? traj.head[0] : 'none',
+              'head max yaw:', traj.head ? Math.max(...traj.head.map(h => Math.abs(h[0]))).toFixed(1) : 'n/a');
+  document.getElementById('play-btn').textContent = '▶';
+  document.getElementById('scrubber').max         = traj.n_frames - 1;
+  document.getElementById('scrubber').value       = 0;
   updateTimeDisplay(0);
-  applyEyes(traj.left[0], traj.right[0]);
+  applyFrame(0);
 };
 
 window._avatarTogglePlay = function() {
   if (!_traj) return;
   _playing = !_playing;
   if (_playing) {
-    if (_frame >= _traj.n_frames - 1) _frame = 0;   // restart at end
+    if (_frame >= _traj.n_frames - 1) _frame = 0;
     _lastRafTs = null;
     document.getElementById('play-btn').textContent = '⏸';
   } else {
@@ -521,35 +551,51 @@ window._avatarTogglePlay = function() {
 
 window._avatarOnScrub = function(val) {
   if (!_traj) return;
-  _frame = val;
-  _lastRafTs = null;   // avoid jump on resume
-  applyEyes(_traj.left[val], _traj.right[val]);
+  _frame = val; _lastRafTs = null;
+  applyFrame(val);
   updateTimeDisplay(val);
 };
 
-// ── Render loop ───────────────────────────────────────────────────────────────
+// ── Render loop (scissor split) ───────────────────────────────────────────────
+function renderViewports() {
+  const w = W(), h = H(), hw = Math.floor(w / 2);
+  const fi = Math.min(Math.floor(_frame), _traj ? _traj.n_frames - 1 : 0);
+
+  renderer.clear();
+
+  // Left — world view: restore head rotation for this frame
+  applyFrame(fi);
+  renderer.setViewport(0, 0, hw, h);
+  renderer.setScissor(0, 0, hw, h);
+  renderer.setScissorTest(true);
+  renderer.render(scene, worldCam);
+
+  // Right — head-fixed view: head bone at rest, eyes unchanged
+  if (headBone && restHead) headBone.rotation.copy(restHead);
+  renderer.setViewport(hw, 0, w - hw, h);
+  renderer.setScissor(hw, 0, w - hw, h);
+  renderer.render(scene, headCam);
+}
+
 function animate(ts) {
   requestAnimationFrame(animate);
 
   if (_playing && _traj) {
     if (_lastRafTs !== null) {
-      const elapsed = (ts - _lastRafTs) / 1000;
-      _frame += elapsed * _traj.fps;
+      _frame += (ts - _lastRafTs) / 1000 * _traj.fps;
       if (_frame >= _traj.n_frames) {
-        _frame   = _traj.n_frames - 1;
-        _playing = false;
+        _frame = _traj.n_frames - 1; _playing = false;
         document.getElementById('play-btn').textContent = '▶';
       }
       const fi = Math.min(Math.floor(_frame), _traj.n_frames - 1);
-      applyEyes(_traj.left[fi], _traj.right[fi]);
+      applyFrame(fi);
       document.getElementById('scrubber').value = fi;
       updateTimeDisplay(fi);
     }
     _lastRafTs = ts;
   }
 
-  controls.update();
-  renderer.render(scene, camera);
+  renderViewports();
 }
 requestAnimationFrame(animate);
 </script>

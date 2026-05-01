@@ -48,6 +48,7 @@ h1   { font-size: 22px; margin-bottom: 4px; }
     <h2 style="margin-bottom:4px;">Pages</h2>
     <a href="../">LLM Simulator</a>
     <a href="../clinical_benchmarks/">Clinical Benchmarks</a>
+    <a href="../experiments/">Experiments</a>
     <a href="../parameters.html">Parameters</a>
     <div style="border-top:1px solid #2a2a4e;margin:10px 0 8px;"></div>
     <h2>Sections</h2>
@@ -62,8 +63,8 @@ h1   { font-size: 22px; margin-bottom: 4px; }
   <main>
     <h1>OculomotorJax — Benchmark Report</h1>
     <p class="meta">
-      Generated: <strong>2026-04-27</strong> &nbsp;|&nbsp;
-      Version: <strong>24cce12-dirty</strong> &nbsp;|&nbsp;
+      Generated: <strong>2026-05-01 (edited)</strong> &nbsp;|&nbsp;
+      Version: <strong>97d08b2-dirty</strong> &nbsp;|&nbsp;
       <a href="../BENCHMARKS.md">BENCHMARKS.md</a>
     </p>
 
@@ -99,22 +100,22 @@ h1   { font-size: 22px; margin-bottom: 4px; }
     <div class="fig-card">
       <a href="figures/saccade_refractoriness.png" target="_blank"><img src="figures/saccade_refractoriness.png" alt="Saccade Double-Step Refractoriness"></a>
       <h3>Saccade Double-Step Refractoriness</h3>
-      <p class="desc">Double-step paradigm: target jumps 0→10° then 10→20° after variable ISI. Short ISIs produce a single amended saccade (refractory); longer ISIs produce two.</p>
+      <p class="desc">Double-step paradigm: target jumps 0→A/2 then A/2→A for A=10,20,30,40° after variable ISI (20–500 ms). Target shown dashed in same colour as eye trace. Short ISIs produce one amended saccade; longer ISIs produce two.</p>
       <div class="expected">
         <strong>Expected behavior</strong>
-        ISI < 100 ms: only 1 saccade. ISI > 150 ms: 2 separate saccades.
+        ISI < ~100 ms: 1 saccade (merged). ISI > ~150 ms: 2 separate saccades. Refractory period roughly constant across amplitudes (~150 ms).
       </div>
       <p class="citation">&#128214; Becker & Jürgens (1979) Vision Res</p>
       <span class="badge behavior">behavior</span>
     </div>
 
     <div class="fig-card">
-      <a href="figures/saccade_cascade.png" target="_blank"><img src="figures/saccade_cascade.png" alt="Saccade Signal Cascade (Internal)"></a>
-      <h3>Saccade Signal Cascade (Internal)</h3>
-      <p class="desc">Row-by-row signal flow for 1°, 5°, 20° saccades: position, visual cascade + hold, accumulator/latch, residual error, burst, eye velocity, refractory state.</p>
+      <a href="figures/saccade_cascade_noisy.png" target="_blank"><img src="figures/saccade_cascade_noisy.png" alt="Saccade Signal Cascade (with noise)"></a>
+      <h3>Saccade Signal Cascade (with noise)</h3>
+      <p class="desc">Row-by-row signal flow for 1°, 5°, 20°, 40° saccades: position, visual cascade + hold, accumulator (z_acc) + trigger IBN (z_trig) + OPN (z_opn), residual error, burst, eye velocity.</p>
       <div class="expected">
         <strong>Expected behavior</strong>
-        e_held freezes at saccade onset; burst proportional to e_res; z_ref locks out next saccade for ~150 ms.
+        e_held freezes at saccade onset; z_acc rises to threshold then drains to floor (−0.5) during burst; z_trig suppresses OPN; accumulator floor enforces ~270 ms ISI.
       </div>
       <p class="citation">&#128214; Robinson (1975) J Neurophysiol; Scudder et al. (2002)</p>
       <span class="badge cascade">cascade</span>
@@ -155,19 +156,31 @@ h1   { font-size: 22px; margin-bottom: 4px; }
 
   <section class="section" id="gravity">
     <h2>3. Gravity Estimator</h2>
-    <p>Canal-otolith interaction: OCR, OVAR, VOR tilt suppression, OCR vs tilt angle, somatogravic OCR frequency dependence. Parameters: K_grav=0.6, K_gd=0.5, g_ocr=0.6116207951070336 (Laurens & Angelaki 2011).</p>
+    <p>Canal-otolith interaction: OCR, OVAR, VOR tilt suppression, OCR vs tilt angle, somatogravic OCR frequency dependence. Parameters: tau_grav=5.0, K_gd=2.864788978927615, g_ocr=1.019367991845056 (Laurens & Angelaki 2011).</p>
     <div class="fig-grid">
       
     <div class="fig-card">
       <a href="figures/gravity_ocr.png" target="_blank"><img src="figures/gravity_ocr.png" alt="Ocular Counterroll (OCR)"></a>
       <h3>Ocular Counterroll (OCR)</h3>
-      <p class="desc">Counter-roll traces for tilts [5.0, 10.0, 20.0, 30.0, 45.0, 60.0, 75.0, 90.0]° + SS scatter. g_ocr=0.61.</p>
+      <p class="desc">Counter-roll traces for tilts [5.0, 10.0, 20.0, 30.0, 45.0, 60.0, 75.0, 90.0]° + SS scatter. g_ocr=1.02.</p>
       <div class="expected">
         <strong>Expected behavior</strong>
-        Torsion ≈ −G_OCR×G0×sin(θ). 30° → ≈−3.0°. g_est holds flat after tilt (no drift).
+        Torsion ≈ −G_OCR×G0×sin(θ). 30° → ≈−5.0°. g_est holds flat after tilt (no drift).
       </div>
       <p class="citation">&#128214; Boff, Kaufman & Thomas (1986); Laurens & Angelaki (2011)</p>
       <span class="badge behavior">behavior</span>
+    </div>
+
+    <div class="fig-card">
+      <a href="figures/gravity_ocr_cascade.png" target="_blank"><img src="figures/gravity_ocr_cascade.png" alt="OCR cascade (4-condition comparison)"></a>
+      <h3>OCR cascade (4-condition comparison)</h3>
+      <p class="desc">30.0° tilt — VS, NI torsion cascade + SPV for scene+target / target only / scene only / dark.</p>
+      <div class="expected">
+        <strong>Expected behavior</strong>
+        Torsion stabilises at ≈-4.95°. SPV row: -VS (dashed) and -canal FT (dotted) should bracket the measured SPV. Yaw/pitch near 0 (pure roll tilt).
+      </div>
+      <p class="citation">&#128214; Debug diagnostic</p>
+      <span class="badge cascade">cascade</span>
     </div>
 
     <div class="fig-card">
@@ -200,7 +213,7 @@ h1   { font-size: 22px; margin-bottom: 4px; }
       <p class="desc">Sinusoidal lateral translation at [0.03, 0.07, 0.15, 0.3, 0.7, 1.5] Hz, 2.0 m/s² peak. OCR via gravity estimator LP filter.</p>
       <div class="expected">
         <strong>Expected behavior</strong>
-        Corner frequency fc = K_grav/(2π) ≈ 0.095 Hz. OCR amplitude ∝ 1/√(1+(f/fc)²). Low f → peak ≈ 1.22°; high f → near 0°.
+        Corner frequency fc = K_grav/(2π) ≈ 0.032 Hz. OCR amplitude ∝ 1/√(1+(f/fc)²). Low f → peak ≈ 2.04°; high f → near 0°.
       </div>
       <p class="citation">&#128214; Mayne (1974); Laurens & Angelaki (2011)</p>
       <span class="badge behavior">behavior</span>
@@ -210,13 +223,14 @@ h1   { font-size: 22px; margin-bottom: 4px; }
 
   <section class="section" id="pursuit">
     <h2>4. Smooth Pursuit</h2>
+
     <p>Smooth pursuit and catch-up saccades. Tests velocity gain at multiple speeds, sinusoidal tracking, and the pursuit integrator + saccade interaction cascade.</p>
     <div class="fig-grid">
       
     <div class="fig-card">
       <a href="figures/pursuit_velocity_range.png" target="_blank"><img src="figures/pursuit_velocity_range.png" alt="Smooth Pursuit — Velocity Range"></a>
       <h3>Smooth Pursuit — Velocity Range</h3>
-      <p class="desc">Step-ramp target at 5, 10, 20, 40 deg/s. Blue: smooth pursuit enabled. Gray: saccades only (pursuit off). Rows: position, velocity, pursuit integrator state.</p>
+      <p class="desc">Step-ramp target at 5, 10, 20, 40 deg/s. Blue: smooth pursuit enabled. Gray: saccades only (pursuit off). Rows: position, velocity, pursuit drive (total + integrator + phasic).</p>
       <div class="expected">
         <strong>Expected behavior</strong>
         At 5–10 deg/s: pursuit tracks closely, steady-state gain > 0.8. At higher velocities: catch-up saccades + partial pursuit.
@@ -240,10 +254,10 @@ h1   { font-size: 22px; margin-bottom: 4px; }
     <div class="fig-card">
       <a href="figures/pursuit_cascade.png" target="_blank"><img src="figures/pursuit_cascade.png" alt="Smooth Pursuit Signal Cascade (Internal)"></a>
       <h3>Smooth Pursuit Signal Cascade (Internal)</h3>
-      <p class="desc">Full signal chain for 20 deg/s pursuit: position, velocity, pursuit integrator state, visual cascade error, accumulator/latch for catch-up saccades, burst, refractory state.</p>
+      <p class="desc">Full signal chain for 20 deg/s pursuit: target ramps 0.2–2.0 s then holds. Pursuit integrator persists after target stop (τ ≈ 40 s). Rows: position, velocity, pursuit drive (total/integrator/phasic), visual error, saccade accumulator, burst, refractory state.</p>
       <div class="expected">
         <strong>Expected behavior</strong>
-        Pursuit integrator charges to target velocity; catch-up saccades fire when positional error exceeds threshold; saccade refractory period visible between bursts.
+        Phasic drive rises fast at onset, decays to 0 at steady state. After target stops at 2 s: phasic reverses (retinal slip now backward), integrator decays slowly — eye coasts then corrects with catch-up saccades. Integrator TC visible as slow drift in x_p post-stop.
       </div>
       <p class="citation">&#128214; Lisberger & Westbrook (1985)</p>
       <span class="badge cascade">cascade</span>
@@ -253,30 +267,54 @@ h1   { font-size: 22px; margin-bottom: 4px; }
 
   <section class="section" id="vergence">
     <h2>5. Vergence</h2>
-    <p>Binocular vergence eye movements driven by disparity. Symmetric convergence isolates vergence dynamics. Asymmetric vergence combines a version saccade with a depth change.</p>
+    <p>Binocular vergence eye movements driven by disparity. Symmetric convergence isolates vergence dynamics. Asymmetric vergence combines a version saccade with a depth change. Fixation disparity benchmark measures residual vergence error vs. target distance.</p>
     <div class="fig-grid">
       
     <div class="fig-card">
-      <a href="figures/vergence_symmetric.png" target="_blank"><img src="figures/vergence_symmetric.png" alt="Symmetric Vergence (Convergence)"></a>
-      <h3>Symmetric Vergence (Convergence)</h3>
-      <p class="desc">Both eyes converge symmetrically when a near target appears at midline. Saccades disabled to isolate vergence dynamics.</p>
+      <a href="figures/vergence_bidir.png" target="_blank"><img src="figures/vergence_bidir.png" alt="Vergence: Symmetric + Asymmetric, Both Directions"></a>
+      <h3>Vergence: Symmetric + Asymmetric, Both Directions</h3>
+      <p class="desc">3 rows × 4 cols. Cols: symmetric conv, symmetric div, asymmetric right+conv, asymmetric left+div. Row 0: L/R eye yaw. Row 1: vergence (L−R). Row 2: version (L+R)/2.</p>
       <div class="expected">
         <strong>Expected behavior</strong>
-        Δvergence ≈ 11.0° (far→near; IPD=6 mm). Version ≈ 0. Rise TC: fast phasic component + slow integration (τ ≈ 400 ms within Panum's area).
+        Symmetric: L/R yaw diverge/converge equally, version ≈ 0. Asymmetric: both eyes saccade then vergence separates them. Rise TC ≈ 0.5–1 s. Version and vergence components are disconjugate.
       </div>
-      <p class="citation">&#128214; Mays (1984) J Neurophysiol; Cumming & Judge (1986) J Physiol</p>
+      <p class="citation">&#128214; Mays (1984) J Neurophysiol; Collewijn et al. (1988) J Physiol; Zee et al. (1992) J Neurophysiol</p>
       <span class="badge behavior">behavior</span>
     </div>
 
     <div class="fig-card">
-      <a href="figures/vergence_asymmetric.png" target="_blank"><img src="figures/vergence_asymmetric.png" alt="Asymmetric Vergence"></a>
-      <h3>Asymmetric Vergence</h3>
-      <p class="desc">Target moves 10° rightward AND closer (2 m → 0.5 m). Version (conjugate) and vergence (disconjugate) should separate.</p>
+      <a href="figures/vergence_fixation_distance.png" target="_blank"><img src="figures/vergence_fixation_distance.png" alt="Fixation Disparity vs. Distance"></a>
+      <h3>Fixation Disparity vs. Distance</h3>
+      <p class="desc">Steady-state vergence residual error at eight target distances (0.2–3 m). Left: vergence time-courses (near = warm colours). Right: fixation disparity in arcmin — the residual after fusion settles. Positive = under-convergence (exo FD). Green band = normal ±6 arcmin.</p>
       <div class="expected">
         <strong>Expected behavior</strong>
-        Version ≈ 10° (saccade). Vergence ≈ 7.3° (near). Components independent (saccade TC ~ 50–70 ms; vergence TC ~ 400 ms).
+        Fixation disparity <10 arcmin across the physiological range (Ogle 1964: 0–6 arcmin). Near targets may show slightly larger exo FD due to reduced fusional gain. Vergence TC ~0.5–2 s.
       </div>
-      <p class="citation">&#128214; Collewijn et al. (1988) J Physiol; Zee et al. (1992)</p>
+      <p class="citation">&#128214; Ogle, Martens & Dyer (1967); Semmlow & Hung (1983) Vision Research 23(3)</p>
+      <span class="badge behavior">behavior</span>
+    </div>
+
+    <div class="fig-card">
+      <a href="figures/vergence_diplopia.png" target="_blank"><img src="figures/vergence_diplopia.png" alt="Diplopia: Fusion Gate and Vergence Limits"></a>
+      <h3>Diplopia: Fusion Gate and Vergence Limits</h3>
+      <p class="desc">3 rows × 2 cols. Col 0: fused (3→0.3 m midline). Col 1: diplopic (3→0.05 m midline). Both columns use default params (saccades on). Row 0: L/R eye yaw; fused shows geometric target lines (±geo/2), diplopic shows NPC motor-limit lines (±NPC/2) with off-scale annotation. Row 1: vergence (L−R) with geometric target and NPC limit. Row 2: version (L+R)/2 — auto-scaled; diplopic case shows version shift from monocular fixation saccade driven by dominant eye retinal error.</p>
+      <div class="expected">
+        <strong>Expected behavior</strong>
+        Fused: L/R eye yaw converges to ±geo/2 dashed targets; vergence reaches geo target; version stays ≈ 0. Diplopic: monocular fixation saccade fires (dominant R eye drives both eyes); R eye lands on its geometric target (−geo/2); L eye deviates. Vergence limited well below geometric target.
+      </div>
+      <p class="citation">&#128214; Fender & Julesz (1967) J Opt Soc Am; Schor (1979) Vision Res; Shipley & Rawlings (1970) Vision Res</p>
+      <span class="badge behavior">behavior</span>
+    </div>
+
+    <div class="fig-card">
+      <a href="figures/vergence_asym_debug.png" target="_blank"><img src="figures/vergence_asym_debug.png" alt="Asymmetric Vergence Debug Cascade"></a>
+      <h3>Asymmetric Vergence Debug Cascade</h3>
+      <p class="desc">7 rows × 2 cols. Left: asym right+conv (2→0.5 m, +10°). Right: asym left+div (0.5→2 m, −10°). Rows: eye position, vergence (L−R), version (L+R)/2, vergence velocity, OPN gate z_act, internal states e_held/x_copy/x_verg [H], Zee burst [H].</p>
+      <div class="expected">
+        <strong>Expected behavior</strong>
+        OPN gate: pulses during version saccade; Zee burst fires during the same window and exhausts as x_copy reaches e_held. Vergence velocity: overshoot appears as negative region after peak. x_verg[H] settles at geometric vergence target.
+      </div>
+      <p class="citation">&#128214; Zee et al. (1992) J Neurophysiol; Collewijn et al. (1988) J Physiol</p>
       <span class="badge behavior">behavior</span>
     </div>
     </div>
@@ -312,12 +350,9 @@ h1   { font-size: 22px; margin-bottom: 4px; }
       <p class="desc">Saccades to a (H, V) grid; torsion measured at steady state. g_ocr=0 so OCR=0 and T_required = −H·V·π/360.</p>
       <div class="expected">
         <strong>Expected behavior</strong>
-        Scatter points should lie on the identity line; cross-sections linear with slope −V·π/360 (half-angle rule).
-        Tonic (between-saccade) torsion slightly under-tracks because the NI-driven torsion lags the geometric demand
-        — saccades bring the eye back to Listing's plane. Some residual under-tracking between saccades is
-        physiologically normal (Tweed et al. 1998 measured ~20% under-shoot in inter-saccadic intervals).
+        Scatter points lie on identity line; cross-sections linear with slope −V·π/360.
       </div>
-      <p class="citation">&#128214; Tweed, Haslwanter &amp; Fetter (1998) IOVS 39:1449; van Rijn &amp; van den Berg (1993) Exp Brain Res 95:507; Listing (1854) <em>Beitrag zur physiologischen Optik</em></p>
+      <p class="citation">&#128214; Tweed, Haslwanter & Fetter (1998) IOVS; van Rijn & van den Berg (1993) EBR</p>
       <span class="badge behavior">behavior</span>
     </div>
 

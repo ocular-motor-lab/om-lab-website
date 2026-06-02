@@ -1,0 +1,664 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Binocular Rendering-Error Bench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root{
+  --bg:#070b0c; --bg2:#0c1213; --panel:#0e1517; --line:#1c2a2c;
+  --ink:#e7ece9; --mut:#74908a; --mut2:#48605c;
+  --truth:#28e0d2;       /* ground-truth cube */
+  --recon:#ffa23d;       /* reconstructed percept */
+  --eyeL:#5fb0ff; --eyeR:#ff7d9b;
+  --warn:#ff5d5d;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+  font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12.5px;overflow:hidden}
+body{
+  background-image:
+    linear-gradient(transparent 0 calc(100% - 1px), rgba(40,224,210,.035) 100%),
+    linear-gradient(90deg, transparent 0 calc(100% - 1px), rgba(40,224,210,.035) 100%);
+  background-size:34px 34px;
+}
+#app{display:flex;height:100%}
+/* ---------- control panel ---------- */
+#panel{width:336px;flex:0 0 336px;height:100%;overflow-y:auto;background:linear-gradient(180deg,var(--panel),#0b1112);
+  border-right:1px solid var(--line);padding:0 0 40px}
+#panel::-webkit-scrollbar{width:9px}#panel::-webkit-scrollbar-thumb{background:#1d2c2e;border-radius:9px}
+.head{padding:20px 18px 14px;border-bottom:1px solid var(--line);position:sticky;top:0;
+  background:linear-gradient(180deg,#0e1517,#0e1517f0);backdrop-filter:blur(4px);z-index:5}
+.head h1{font-family:"Fraunces",serif;font-weight:600;font-size:21px;margin:0;letter-spacing:.2px;line-height:1.05}
+.head h1 em{color:var(--truth);font-style:italic}
+.head p{margin:7px 0 0;color:var(--mut);font-size:11px;line-height:1.45}
+.sec{border-bottom:1px solid var(--line)}
+.sec>summary{list-style:none;cursor:pointer;padding:12px 18px;display:flex;align-items:center;gap:8px;
+  font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:var(--mut);user-select:none}
+.sec>summary::-webkit-details-marker{display:none}
+.sec>summary:before{content:"▸";color:var(--mut2);transition:transform .15s;font-size:9px}
+.sec[open]>summary:before{transform:rotate(90deg)}
+.sec>summary b{color:var(--ink);font-weight:600}
+.body{padding:4px 18px 16px}
+.row{margin:11px 0}
+.row label{display:flex;justify-content:space-between;align-items:baseline;color:var(--mut);margin-bottom:5px}
+.row label .v{color:var(--ink);font-variant-numeric:tabular-nums}
+.row label .u{color:var(--mut2);font-size:10px;margin-left:3px}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:3px;border-radius:3px;
+  background:#1b2829;outline:none;margin:2px 0}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;
+  background:var(--ink);cursor:pointer;border:2px solid var(--bg);box-shadow:0 0 0 1px var(--line)}
+input[type=range].acc::-webkit-slider-thumb{background:var(--truth)}
+input[type=range]::-moz-range-thumb{width:13px;height:13px;border:2px solid var(--bg);border-radius:50%;background:var(--ink);cursor:pointer}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
+.eyehdr{display:flex;align-items:center;gap:7px;margin:14px 0 2px;font-size:10px;letter-spacing:1px;text-transform:uppercase}
+.dotL{color:var(--eyeL)} .dotR{color:var(--eyeR)}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px}
+.chip{flex:1 1 auto;text-align:center;border:1px solid var(--line);background:#0c1314;color:var(--mut);
+  padding:7px 8px;border-radius:6px;cursor:pointer;transition:.12s;font-size:10.5px}
+.chip:hover{border-color:#2c4042;color:var(--ink)}
+.chip.warn{border-color:#3a2020;color:#ffb3b3}
+.toggles{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px}
+.tog{display:flex;align-items:center;gap:7px;color:var(--mut);cursor:pointer;user-select:none}
+.tog input{appearance:none;width:14px;height:14px;border:1px solid #2c4042;border-radius:3px;background:#0c1314;cursor:pointer;position:relative;flex:0 0 14px}
+.tog input:checked{background:var(--truth);border-color:var(--truth)}
+.tog input:checked:after{content:"";position:absolute;left:4px;top:1px;width:3px;height:7px;border:solid #062;border-width:0 2px 2px 0;transform:rotate(45deg)}
+/* ---------- viewport ---------- */
+#main{flex:1;position:relative;min-width:0}
+#cv{display:block;width:100%;height:100%}
+#hud{position:absolute;top:16px;right:16px;width:236px;background:#0a1011e8;border:1px solid var(--line);
+  border-radius:9px;padding:13px 14px;backdrop-filter:blur(6px);box-shadow:0 14px 40px #0009}
+#hud h3{margin:0 0 10px;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--mut)}
+.stat{display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-top:1px solid #15211f}
+.stat:first-of-type{border-top:none}
+.stat .k{color:var(--mut)} .stat .val{font-size:15px;font-variant-numeric:tabular-nums}
+.stat .val small{font-size:10px;color:var(--mut2)}
+.legend{position:absolute;left:50%;transform:translateX(-50%);bottom:14px;display:flex;gap:16px;font-size:11px;color:var(--mut);
+  background:#0a1011c0;border:1px solid var(--line);padding:8px 13px;border-radius:8px;backdrop-filter:blur(4px)}
+.legend i{display:inline-block;width:18px;height:3px;border-radius:3px;margin-right:6px;vertical-align:middle}
+.hint{position:absolute;top:16px;left:16px;color:var(--mut2);font-size:10.5px;line-height:1.5;max-width:240px}
+.flag{color:var(--warn)}
+#hud2{position:absolute;top:205px;right:16px;width:236px;background:#0a1011e8;border:1px solid var(--line);
+  border-radius:9px;padding:13px 14px;backdrop-filter:blur(6px);box-shadow:0 14px 40px #0009}
+#hud2 h3{margin:0 0 10px;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--mut)}
+#dispwrap{position:absolute;bottom:14px;right:16px;width:208px;background:#0a1011e8;border:1px solid var(--line);
+  border-radius:9px;padding:10px 10px 8px;backdrop-filter:blur(6px);box-shadow:0 14px 40px #0009}
+#dispwrap .t{font-size:9.5px;letter-spacing:.8px;text-transform:uppercase;color:var(--mut);margin-bottom:5px;text-align:center}
+#disp{display:block;width:188px;height:188px}
+#cyclowrap{position:absolute;bottom:14px;left:16px;width:322px;background:#0a1011ee;border:1px solid var(--line);
+  border-radius:9px;padding:10px 12px 8px;backdrop-filter:blur(6px);box-shadow:0 14px 40px #0009}
+#cyclowrap .t{font-size:9.5px;letter-spacing:.8px;text-transform:uppercase;color:var(--mut);margin-bottom:6px}
+#cyclo{display:block;width:300px;height:260px}
+.clegend{display:flex;gap:13px;font-size:10px;color:var(--mut);margin-top:6px;flex-wrap:wrap}
+</style>
+
+<div id="app">
+  <div id="panel">
+    <div class="head">
+      <h1>Binocular<br><em>Rendering-Error</em> Bench</h1>
+      <p>A cube in virtual space, rendered through two displays, reconstructed by ray triangulation. Misalign a display and watch the percept deform.</p>
+    </div>
+
+    <details class="sec" open><summary><b>Scene geometry</b></summary><div class="body">
+      <div class="row"><label>Interpupillary distance<span><span class="v" id="o_ipd">63</span><span class="u">mm</span></span></label><input class="acc" type="range" id="ipd" min="40" max="80" step="0.5" value="63"></div>
+      <div class="row"><label>Display distance d<span><span class="v" id="o_d">1.50</span><span class="u">m</span></span></label><input class="acc" type="range" id="dist" min="0.3" max="3" step="0.05" value="1.5"></div>
+      <div class="row"><label>Panel half-size<span><span class="v" id="o_pan">0.60</span><span class="u">m</span></span></label><input class="acc" type="range" id="pan" min="0.2" max="1.2" step="0.02" value="0.6"></div>
+    </div></details>
+
+    <details class="sec" open><summary><b>Ground-truth cube</b></summary><div class="body">
+      <div class="grid3">
+        <div class="row"><label>x<span class="v" id="o_cx">0</span></label><input type="range" id="cx" min="-1.5" max="1.5" step="0.02" value="0"></div>
+        <div class="row"><label>y<span class="v" id="o_cy">0</span></label><input type="range" id="cy" min="-1.5" max="1.5" step="0.02" value="0"></div>
+        <div class="row"><label>z<span class="v" id="o_cz">2.0</span></label><input type="range" id="cz" min="0.6" max="4" step="0.02" value="2"></div>
+      </div>
+      <div class="row"><label>edge length<span><span class="v" id="o_sz">0.50</span><span class="u">m</span></span></label><input type="range" id="sz" min="0.1" max="1.4" step="0.02" value="0.5"></div>
+      <div class="grid3">
+        <div class="row"><label>yaw<span class="v" id="o_cyaw">0</span></label><input type="range" id="cyaw" min="-90" max="90" step="1" value="20"></div>
+        <div class="row"><label>pitch<span class="v" id="o_cpit">0</span></label><input type="range" id="cpit" min="-90" max="90" step="1" value="-12"></div>
+        <div class="row"><label>roll<span class="v" id="o_crol">0</span></label><input type="range" id="crol" min="-90" max="90" step="1" value="0"></div>
+      </div>
+    </div></details>
+
+    <details class="sec" open><summary><b>Display misalignment</b></summary><div class="body" id="dispBody"></div></details>
+
+    <details class="sec" open><summary><b>Fixation</b> &nbsp;<span style="color:var(--mut2);font-size:10px">(disparity reference)</span></summary><div class="body">
+      <div class="grid3">
+        <div class="row"><label>x<span class="v" id="o_fx">0</span></label><input type="range" id="fx" min="-1.5" max="1.5" step="0.02" value="0"></div>
+        <div class="row"><label>y<span class="v" id="o_fy">0</span></label><input type="range" id="fy" min="-1.5" max="1.5" step="0.02" value="0"></div>
+        <div class="row"><label>z<span class="v" id="o_fz">2.0</span></label><input type="range" id="fz" min="0.4" max="4" step="0.02" value="2"></div>
+      </div>
+      <div style="color:var(--mut2);font-size:10px;margin:2px 0 4px">fixate vertex:</div>
+      <div class="chips" id="fixCorners"></div>
+    </div></details>
+
+    <details class="sec"><summary><b>Panum's fusional area</b></summary><div class="body">
+      <div class="row"><label>horiz. limit @ fovea<span><span class="v" id="o_ph0">8.0</span><span class="u">′</span></span></label><input type="range" id="ph0" min="2" max="30" step="0.5" value="8"></div>
+      <div class="row"><label>vert. limit @ fovea<span><span class="v" id="o_pv0">4.0</span><span class="u">′</span></span></label><input type="range" id="pv0" min="1" max="20" step="0.5" value="4"></div>
+      <div class="row"><label>horiz. growth<span><span class="v" id="o_pkh">1.5</span><span class="u">′/°</span></span></label><input type="range" id="pkh" min="0" max="6" step="0.1" value="1.5"></div>
+      <div class="row"><label>vert. growth<span><span class="v" id="o_pkv">0.8</span><span class="u">′/°</span></span></label><input type="range" id="pkv" min="0" max="4" step="0.1" value="0.8"></div>
+    </div></details>
+
+    <details class="sec" open><summary><b>Presets</b></summary><div class="body">
+      <div class="chips" id="presets"></div>
+      <div class="chips"><div class="chip warn" id="zeroAll">Zero errors</div><div class="chip warn" id="resetAll">Reset all</div></div>
+    </div></details>
+
+    <details class="sec" open><summary><b>Display</b></summary><div class="body">
+      <div class="toggles" id="toggles"></div>
+    </div></details>
+  </div>
+
+  <div id="main">
+    <canvas id="cv"></canvas>
+    <div class="hint">drag · orbit&nbsp;&nbsp;|&nbsp;&nbsp;scroll · zoom<br>right-drag · pan</div>
+    <div id="hud">
+      <h3>Reconstruction error</h3>
+      <div class="stat"><span class="k">mean vertex</span><span class="val" id="s_mean">0.0<small> mm</small></span></div>
+      <div class="stat"><span class="k">max vertex</span><span class="val" id="s_max">0.0<small> mm</small></span></div>
+      <div class="stat"><span class="k">centroid Δz (depth)</span><span class="val" id="s_dz">0.0<small> mm</small></span></div>
+      <div class="stat"><span class="k">max ray gap</span><span class="val" id="s_gap">0.0<small> mm</small></span></div>
+      <div class="stat" id="flagRow" style="display:none"><span class="flag" id="s_flag"></span></div>
+    </div>
+    <div id="hud2">
+      <h3>Binocular fusion</h3>
+      <div class="stat"><span class="k">diplopic vertices</span><span class="val" id="f_n">0<small> / 8</small></span></div>
+      <div class="stat"><span class="k">max horiz. disparity</span><span class="val" id="f_h">0.0<small> ′</small></span></div>
+      <div class="stat"><span class="k">max vert. disparity</span><span class="val" id="f_v">0.0<small> ′</small></span></div>
+    </div>
+    <div id="cyclowrap">
+      <div class="t">Cyclopean view · retina-centred</div>
+      <canvas id="cyclo" width="600" height="520"></canvas>
+      <div class="clegend"><span style="color:#28e0d2">●</span> fused&nbsp; <span style="color:#5fb0ff">●</span> left img&nbsp; <span style="color:#ff7d9b">●</span> right img&nbsp; <span id="cscale" style="color:var(--mut2)"></span></div>
+    </div>
+    <div id="dispwrap">
+      <div class="t">disparity ÷ Panum limit</div>
+      <canvas id="disp" width="376" height="376"></canvas>
+    </div>
+    <div class="legend">
+      <span><i style="background:var(--truth)"></i>ground truth</span>
+      <span><i style="background:var(--recon)"></i>reconstruction</span>
+      <span><i style="background:#46e07a"></i>fusable</span>
+      <span><i style="background:var(--warn)"></i>diplopic</span>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+const V = THREE.Vector3;
+const deg = d => d*Math.PI/180;
+
+/* ===================================================================
+   ROTATIONS.  R(yaw,pitch,roll) = Rz(roll)·Rx(pitch)·Ry(yaw)
+   i.e. applied to a vector: yaw about +Y first, then pitch about +X,
+   then roll about +Z. Returns a THREE.Matrix3.
+   =================================================================== */
+function rotM(yawDeg, pitchDeg, rollDeg){
+  const y=deg(yawDeg), p=deg(pitchDeg), r=deg(rollDeg);
+  const cy=Math.cos(y), sy=Math.sin(y), cx=Math.cos(p), sx=Math.sin(p), cz=Math.cos(r), sz=Math.sin(r);
+  const Ry=[[cy,0,sy],[0,1,0],[-sy,0,cy]];
+  const Rx=[[1,0,0],[0,cx,-sx],[0,sx,cx]];
+  const Rz=[[cz,-sz,0],[sz,cz,0],[0,0,1]];
+  const mul=(A,B)=>A.map((row,i)=>B[0].map((_,j)=>row[0]*B[0][j]+row[1]*B[1][j]+row[2]*B[2][j]));
+  const M=mul(Rz,mul(Rx,Ry));
+  return new THREE.Matrix3().set(M[0][0],M[0][1],M[0][2], M[1][0],M[1][1],M[1][2], M[2][0],M[2][1],M[2][2]);
+}
+const apply = (M,v)=>v.clone().applyMatrix3(M);
+
+/* ===================================================================
+   FORWARD MODEL  (one eye).  Steps 1-3 of the write-up.
+   eye  : true physical eye centre  e_i               (triangulation origin)
+   cam  : {o, R}  rendering-camera centre + frame      (Step 1)
+   disp : {c, a, b} actual display centre + in-plane axes (Step 2)
+   d    : nominal panel distance.
+   Returns unit perceived-ray direction g_i from the TRUE eye, or null
+   if the point is behind the rendering camera.
+   =================================================================== */
+function perceivedRay(P, eye, cam, disp, d){
+  // --- Step 1: render P to panel coord (s,t) using the (possibly wrong) camera
+  const w = P.clone().sub(cam.o);
+  const right = new V(cam.R.elements[0],cam.R.elements[1],cam.R.elements[2]); // column 0
+  const up    = new V(cam.R.elements[3],cam.R.elements[4],cam.R.elements[5]); // column 1
+  const fwd   = new V(cam.R.elements[6],cam.R.elements[7],cam.R.elements[8]); // column 2
+  const z = w.dot(fwd);
+  if (z <= 1e-6) return null;                       // behind camera -> not rendered
+  const s = d * w.dot(right)/z;
+  const t = d * w.dot(up)/z;
+  // --- Step 2: physical location of pixel (s,t) on the ACTUAL display
+  const X = disp.c.clone().addScaledVector(disp.a, s).addScaledVector(disp.b, t);
+  // --- Step 3: ray from the true eye through that physical pixel
+  return { g: X.clone().sub(eye).normalize(), X, s, t };
+}
+
+/* Step 4: least-squares triangulation of two rays (midpoint of common perpendicular). */
+function triangulate(eL,gL,eR,gR){
+  const w0 = eL.clone().sub(eR);
+  const b = gL.dot(gR), d = gL.dot(w0), e = gR.dot(w0);
+  const den = 1 - b*b;                              // = sin^2(angle between rays)
+  if (Math.abs(den) < 1e-9) return null;            // rays parallel -> no finite percept
+  const mu = (b*e - d)/den;
+  const nu = (e - b*d)/den;
+  const pL = eL.clone().addScaledVector(gL, mu);
+  const pR = eR.clone().addScaledVector(gR, nu);
+  return { P: pL.clone().add(pR).multiplyScalar(0.5), gap: pL.distanceTo(pR), mu, nu };
+}
+
+/* Azimuth/elevation (radians) of a unit ray g relative to gaze axis o, with
+   gaze-aligned retinal axes h (horizontal) and v (vertical). No cyclotorsion. */
+function retAngles(g,o,h,v){ const f=g.dot(o); return [Math.atan2(g.dot(h),f), Math.atan2(g.dot(v),f)]; }
+
+/* cube vertices in world space */
+const SIGN=[[-1,-1,-1],[1,-1,-1],[-1,1,-1],[1,1,-1],[-1,-1,1],[1,-1,1],[-1,1,1],[1,1,1]];
+const EDGES=[[0,1],[2,3],[4,5],[6,7],[0,2],[1,3],[4,6],[5,7],[0,4],[1,5],[2,6],[3,7]];
+function cubeVerts(center,size,rotYPR){
+  const h=size/2, R=rotM(rotYPR[0],rotYPR[1],rotYPR[2]);
+  return SIGN.map(s=>apply(R,new V(s[0]*h,s[1]*h,s[2]*h)).add(center));
+}
+
+/* ===================================================================
+   STATE  +  UI
+   =================================================================== */
+const S = {
+  ipd:63, dist:1.5, pan:0.6,
+  cx:0, cy:0, cz:2, sz:0.5, cyaw:20, cpit:-12, crol:0,
+  // per-eye errors: translation (mm) + rotation (deg)
+  dL:{tx:0,ty:0,tz:0,yaw:0,pit:0,rol:0}, dR:{tx:0,ty:0,tz:0,yaw:0,pit:0,rol:0},
+  fix:{x:0,y:0,z:2},
+  panum:{h0:8,v0:4,kh:1.5,kv:0.8},
+  show:{truth:true, recon:true, displays:true, rays:true, connectors:true, pixels:false,
+        fusion:true, gaze:true, errOnly:false, axes:true, cyclo:true}
+};
+const DEF=JSON.parse(JSON.stringify(S));   // pristine defaults for "Reset all"
+
+const $=id=>document.getElementById(id);
+function bindSlider(id, key, out, fmt){
+  const el=$(id), o=$(out);
+  const set=v=>{ S[key]=parseFloat(v); o.textContent=fmt?fmt(S[key]):S[key]; update(); };
+  el.addEventListener('input',e=>set(e.target.value)); o.textContent=fmt?fmt(S[key]):S[key];
+}
+bindSlider('ipd','ipd','o_ipd'); bindSlider('dist','dist','o_d',v=>v.toFixed(2));
+bindSlider('pan','pan','o_pan',v=>v.toFixed(2));
+bindSlider('cx','cx','o_cx',v=>v.toFixed(2)); bindSlider('cy','cy','o_cy',v=>v.toFixed(2));
+bindSlider('cz','cz','o_cz',v=>v.toFixed(2)); bindSlider('sz','sz','o_sz',v=>v.toFixed(2));
+bindSlider('cyaw','cyaw','o_cyaw'); bindSlider('cpit','cpit','o_cpit'); bindSlider('crol','crol','o_crol');
+
+/* nested-state sliders (fixation point, Panum parameters) */
+function bindNested(id,obj,key,out,fmt){
+  const el=$(id),o=$(out); el.value=obj[key]; o.textContent=fmt?fmt(obj[key]):obj[key];
+  el.addEventListener('input',e=>{obj[key]=parseFloat(e.target.value);o.textContent=fmt?fmt(obj[key]):obj[key];update();});
+}
+bindNested('fx',S.fix,'x','o_fx',v=>v.toFixed(2)); bindNested('fy',S.fix,'y','o_fy',v=>v.toFixed(2));
+bindNested('fz',S.fix,'z','o_fz',v=>v.toFixed(2));
+bindNested('ph0',S.panum,'h0','o_ph0',v=>v.toFixed(1)); bindNested('pv0',S.panum,'v0','o_pv0',v=>v.toFixed(1));
+bindNested('pkh',S.panum,'kh','o_pkh',v=>v.toFixed(1)); bindNested('pkv',S.panum,'kv','o_pkv',v=>v.toFixed(1));
+
+function setFix(p){ S.fix.x=p.x;S.fix.y=p.y;S.fix.z=p.z;
+  [['fx',p.x],['fy',p.y],['fz',p.z]].forEach(([id,v])=>{$(id).value=v;$('o_'+id).textContent=v.toFixed(2);}); update(); }
+function curVerts(){ return cubeVerts(new V(S.cx,S.cy,S.cz),S.sz,[S.cyaw,S.cpit,S.crol]); }
+(function(){ const c=$('fixCorners');
+  const cc=document.createElement('div');cc.className='chip';cc.textContent='centre';
+  cc.onclick=()=>setFix(new V(S.cx,S.cy,S.cz)); c.appendChild(cc);
+  for(let i=0;i<8;i++){ const ch=document.createElement('div');ch.className='chip';ch.style.flex='0 0 30px';ch.textContent=(i+1);
+    ch.onclick=()=>setFix(curVerts()[i]); c.appendChild(ch); } })();
+
+/* build the 6-DOF error blocks for an eye */
+const DOF=[['tx','Δx','mm',-10,10,0.1],['ty','Δy','mm',-10,10,0.1],['tz','Δz','mm',-10,10,0.1],
+           ['yaw','yaw','°',-5,5,0.05],['pit','pitch','°',-5,5,0.05],['rol','roll','°',-5,5,0.05]];
+function errBlock(container, eyeKey, label, cls){
+  const wrap=document.createElement('div');
+  wrap.innerHTML=`<div class="eyehdr ${cls}">◆ ${label}</div>`;
+  const g=document.createElement('div'); g.className='grid3';
+  DOF.forEach(([k,nm,u,mn,mx,st])=>{
+    const oid=`o_${eyeKey}_${k}`;
+    const r=document.createElement('div'); r.className='row';
+    r.innerHTML=`<label>${nm}<span class="v" id="${oid}">0</span></label>
+      <input type="range" min="${mn}" max="${mx}" step="${st}" value="0">`;
+    g.appendChild(r);
+    const slider=r.querySelector('input'), o=r.querySelector('span');
+    slider.addEventListener('input',e=>{ S[eyeKey][k]=parseFloat(e.target.value);
+      o.textContent=(k.length===3?parseFloat(e.target.value).toFixed(1):e.target.value); update(); });
+    slider.dataset.eye=eyeKey; slider.dataset.k=k;
+  });
+  wrap.appendChild(g); container.appendChild(wrap);
+}
+errBlock($('dispBody'),'dL','Left display','dotL'); errBlock($('dispBody'),'dR','Right display','dotR');
+
+/* toggles */
+const TOG=[['truth','ground truth'],['recon','reconstruction'],['displays','displays'],
+           ['rays','perceived rays'],['connectors','error vectors'],['pixels','panel pixels'],
+           ['fusion','fusability colour'],['gaze','gaze lines'],['errOnly','error-only disparity'],
+           ['axes','coordinate axes'],['cyclo','cyclopean view']];
+TOG.forEach(([k,lab])=>{
+  const l=document.createElement('label'); l.className='tog';
+  l.innerHTML=`<input type="checkbox" ${S.show[k]?'checked':''}> ${lab}`;
+  const cb=l.querySelector('input'); cb.dataset.k=k;
+  cb.addEventListener('change',e=>{S.show[k]=e.target.checked;update();});
+  $('toggles').appendChild(l);
+});
+
+/* presets */
+const PRESETS={
+  'Right yaw +1.5°':()=>{zero();S.dR.yaw=1.5;},
+  'Vertical 6 mm (R)':()=>{zero();S.dR.ty=6;},
+  'Roll ±1°':()=>{zero();S.dL.rol=1;S.dR.rol=-1;},
+  'Depth scale':()=>{zero();S.dL.tx=-3;S.dR.tx=3;}          // displays pushed outward
+};
+function zero(){ ['dL','dR'].forEach(e=>DOF.forEach(([k])=>S[e][k]=0)); }
+function syncErrUI(){
+  document.querySelectorAll('#dispBody input').forEach(sl=>{
+    const v=S[sl.dataset.eye][sl.dataset.k]; sl.value=v;
+    const o=document.getElementById(`o_${sl.dataset.eye}_${sl.dataset.k}`);
+    if(o) o.textContent=(sl.dataset.k.length===3?v.toFixed(1):v);
+  });
+}
+Object.entries(PRESETS).forEach(([nm,fn])=>{
+  const c=document.createElement('div'); c.className='chip'; c.textContent=nm;
+  c.onclick=()=>{fn();syncErrUI();update();}; $('presets').appendChild(c);
+});
+$('zeroAll').onclick=()=>{zero();syncErrUI();update();};
+
+/* full reset: restore every control to its default, in place so slider closures stay valid */
+function syncAllUI(){
+  [['ipd','o_ipd',0],['dist','o_d',2],['pan','o_pan',2],['cx','o_cx',2],['cy','o_cy',2],['cz','o_cz',2],
+   ['sz','o_sz',2],['cyaw','o_cyaw',0],['cpit','o_cpit',0],['crol','o_crol',0]]
+   .forEach(([id,out,dp])=>{$(id).value=S[id];$(out).textContent=dp?(+S[id]).toFixed(dp):S[id];});
+  [['fx','o_fx',S.fix,'x',2],['fy','o_fy',S.fix,'y',2],['fz','o_fz',S.fix,'z',2],
+   ['ph0','o_ph0',S.panum,'h0',1],['pv0','o_pv0',S.panum,'v0',1],['pkh','o_pkh',S.panum,'kh',1],['pkv','o_pkv',S.panum,'kv',1]]
+   .forEach(([id,out,obj,k,dp])=>{$(id).value=obj[k];$(out).textContent=obj[k].toFixed(dp);});
+  syncErrUI();
+  document.querySelectorAll('#toggles input').forEach(cb=>{cb.checked=!!S.show[cb.dataset.k];});
+}
+function resetAll(){
+  const d=JSON.parse(JSON.stringify(DEF));
+  ['ipd','dist','pan','cx','cy','cz','sz','cyaw','cpit','crol'].forEach(k=>S[k]=d[k]);
+  Object.assign(S.fix,d.fix); Object.assign(S.panum,d.panum);
+  Object.assign(S.dL,d.dL); Object.assign(S.dR,d.dR); Object.assign(S.show,d.show);
+  syncAllUI(); update();
+}
+$('resetAll').onclick=resetAll;
+
+/* ===================================================================
+   THREE.js scene
+   =================================================================== */
+const cv=$('cv'), renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+const scene=new THREE.Scene(); scene.background=new THREE.Color(0x070b0c);
+const cam=new THREE.PerspectiveCamera(45,1,0.01,100);
+scene.add(new THREE.AmbientLight(0xffffff,0.85));
+const dl=new THREE.DirectionalLight(0xffffff,0.5); dl.position.set(2,4,3); scene.add(dl);
+
+/* floor grid for spatial reference */
+const grid=new THREE.GridHelper(8,32,0x14302e,0x0e1f1e); grid.position.y=-1.2; scene.add(grid);
+
+const COL={truth:0x28e0d2,recon:0xffa23d,eyeL:0x5fb0ff,eyeR:0xff7d9b};
+function lineSegs(color,opacity=1,width=1){
+  const g=new THREE.BufferGeometry();
+  const m=new THREE.LineBasicMaterial({color,transparent:opacity<1,opacity,linewidth:width});
+  const o=new THREE.LineSegments(g,m); scene.add(o); return o;
+}
+const gtCube=lineSegs(COL.truth), rcCube=lineSegs(COL.recon), connect=lineSegs(0xff7a3d,0.4);
+const raysL=lineSegs(COL.eyeL,0.35), raysR=lineSegs(COL.eyeR,0.35);
+
+function eyeBall(color){const m=new THREE.Mesh(new THREE.SphereGeometry(0.018,20,20),
+  new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:0.4,roughness:.4}));scene.add(m);return m;}
+const ballL=eyeBall(COL.eyeL), ballR=eyeBall(COL.eyeR);
+
+const EY=new V(0,1,0);
+/* fusability dot per cube vertex, gaze lines, fixation marker */
+const fuseDots=[]; for(let i=0;i<8;i++){const m=new THREE.Mesh(new THREE.SphereGeometry(0.013,16,16),
+  new THREE.MeshBasicMaterial({color:0x46e07a}));scene.add(m);fuseDots.push(m);}
+const gazeLines=lineSegs(0xffe06a,0.5);
+const fixMark=new THREE.Mesh(new THREE.SphereGeometry(0.02,18,18),
+  new THREE.MeshBasicMaterial({color:0xffe06a}));scene.add(fixMark);
+
+/* labelled coordinate axes at the head origin (X right, Y up, Z toward scene) */
+const axisObjs=[];
+function textSprite(txt,hex){
+  const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d');
+  x.fillStyle=hex;x.font='bold 46px monospace';x.textAlign='center';x.textBaseline='middle';x.fillText(txt,32,34);
+  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),transparent:true,depthTest:false}));
+  s.scale.set(0.12,0.12,0.12);return s;
+}
+[['X',new V(1,0,0),0xff7a7a],['Y',new V(0,1,0),0x7ae08f],['Z',new V(0,0,1),0xb48cff]].forEach(([lab,dir,col])=>{
+  const arr=new THREE.ArrowHelper(dir,new V(0,0,0),0.45,col,0.09,0.05);scene.add(arr);axisObjs.push(arr);
+  const sp=textSprite(lab,'#'+col.toString(16).padStart(6,'0'));sp.position.copy(dir.clone().multiplyScalar(0.56));scene.add(sp);axisObjs.push(sp);
+});
+
+function panel(color){
+  const grp=new THREE.Group();
+  const fill=new THREE.Mesh(new THREE.PlaneGeometry(1,1),
+    new THREE.MeshBasicMaterial({color,transparent:true,opacity:0.05,side:THREE.DoubleSide}));
+  const edge=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.PlaneGeometry(1,1)),
+    new THREE.LineBasicMaterial({color,transparent:true,opacity:0.55}));
+  grp.add(fill,edge); grp.matrixAutoUpdate=false; scene.add(grp); return grp;
+}
+const panL=panel(COL.eyeL), panR=panel(COL.eyeR);
+let pixL=null,pixR=null;
+function pixelPoints(color){const g=new THREE.BufferGeometry();
+  const m=new THREE.PointsMaterial({color,size:0.03});const p=new THREE.Points(g,m);scene.add(p);return p;}
+pixL=pixelPoints(COL.eyeL); pixR=pixelPoints(COL.eyeR);
+
+/* lay a display group at centre c with in-plane axes a,b (unit) and size 2*half */
+function placePanel(grp, c, a, b, half){
+  const n=a.clone().cross(b).normalize();
+  const M=new THREE.Matrix4().makeBasis(a,b,n).setPosition(c);
+  const sc=new THREE.Matrix4().makeScale(half*2,half*2,1);
+  grp.matrix.multiplyMatrices(M,sc);
+}
+
+/* ===================================================================
+   MAIN UPDATE
+   =================================================================== */
+function eyeSetup(sign, derr){
+  const eye=new V(sign*S.ipd/2000,0,0);                       // mm -> m
+  // ideal display: centred on the eye's forward axis at distance d, fronto-parallel
+  const c0=eye.clone().add(new V(0,0,S.dist));
+  const dispR=rotM(derr.yaw,derr.pit,derr.rol);               // rotate about display centre
+  const a=apply(dispR,new V(1,0,0)), b=apply(dispR,new V(0,1,0));
+  const c=c0.clone().add(new V(derr.tx/1000,derr.ty/1000,derr.tz/1000));
+  // renderer projects from the true eye (no separate camera-error knob)
+  return { eye, cam:{o:eye.clone(),R:rotM(0,0,0)}, disp:{c,a,b} };
+}
+
+function update(){
+  const center=new V(S.cx,S.cy,S.cz);
+  const verts=cubeVerts(center,S.sz,[S.cyaw,S.cpit,S.crol]);
+  const L=eyeSetup(-1,S.dL), R=eyeSetup(+1,S.dR);
+
+  ballL.position.copy(L.eye); ballR.position.copy(R.eye);
+  placePanel(panL,L.disp.c,L.disp.a,L.disp.b,S.pan);
+  placePanel(panR,R.disp.c,R.disp.a,R.disp.b,S.pan);
+  panL.visible=panR.visible=S.show.displays;
+
+  // reconstruct each vertex
+  const recon=[], gapArr=[], rayPts=[[],[]], pixPts=[[],[]];
+  let invalid=0, offPanel=0;
+  for(const P of verts){
+    const rL=perceivedRay(P,L.eye,L.cam,L.disp,S.dist);
+    const rR=perceivedRay(P,R.eye,R.cam,R.disp,S.dist);
+    if(!rL||!rR){ recon.push(null); invalid++; continue; }
+    if(Math.abs(rL.s)>S.pan||Math.abs(rL.t)>S.pan||Math.abs(rR.s)>S.pan||Math.abs(rR.t)>S.pan) offPanel++;
+    const tri=triangulate(L.eye,rL.g,R.eye,rR.g);
+    recon.push(tri?tri.P:null);
+    if(tri) gapArr.push(tri.gap);
+    rayPts[0].push(L.eye,L.eye.clone().addScaledVector(rL.g,4));
+    rayPts[1].push(R.eye,R.eye.clone().addScaledVector(rR.g,4));
+    pixPts[0].push(rL.X); pixPts[1].push(rR.X);
+  }
+
+  // ---- ground-truth wireframe
+  setEdges(gtCube,verts); gtCube.visible=S.show.truth;
+  // ---- reconstruction wireframe (skip edges with a missing endpoint)
+  setEdges(rcCube,recon,true); rcCube.visible=S.show.recon;
+  // ---- error vectors
+  const cv=[]; verts.forEach((P,i)=>{ if(recon[i]){cv.push(P,recon[i]);} });
+  setPos(connect,cv); connect.visible=S.show.connectors;
+  // ---- rays / pixels
+  setPos(raysL,rayPts[0]); setPos(raysR,rayPts[1]);
+  raysL.visible=raysR.visible=S.show.rays;
+  setPointPos(pixL,pixPts[0]); setPointPos(pixR,pixPts[1]);
+  pixL.visible=pixR.visible=S.show.pixels;
+
+  // ---- statistics
+  let sum=0,mx=0,n=0; const cg=new V(), cgT=new V();
+  verts.forEach((P,i)=>{ if(recon[i]){const e=P.distanceTo(recon[i]);sum+=e;mx=Math.max(mx,e);n++;
+    cg.add(recon[i]); cgT.add(P);} });
+  if(n){cg.multiplyScalar(1/n);cgT.multiplyScalar(1/n);}
+  const maxGap=gapArr.length?Math.max(...gapArr):0;
+  $('s_mean').innerHTML=(n?(sum/n*1000).toFixed(1):'—')+'<small> mm</small>';
+  $('s_max').innerHTML=(mx*1000).toFixed(1)+'<small> mm</small>';
+  $('s_dz').innerHTML=((cg.z-cgT.z)*1000).toFixed(1)+'<small> mm</small>';
+  $('s_gap').innerHTML=(maxGap*1000).toFixed(1)+'<small> mm</small>';
+  const fr=$('flagRow'); let msg='';
+  if(invalid) msg=invalid+' vertex(es) behind a camera';
+  else if(offPanel) msg=offPanel+' vertex(es) off-panel';
+  if(msg){fr.style.display='';$('s_flag').textContent='⚠ '+msg;} else fr.style.display='none';
+
+  // ---- binocular fusion + cyclopean percept --------------------------------
+  // Fixation enters ONLY here, as the reference for retinal disparity (the
+  // horopter); it does not perturb the reconstruction above.
+  const RAD2AM=(360*60)/(2*Math.PI);                 // radians -> arcmin
+  const fix=new V(S.fix.x,S.fix.y,S.fix.z);
+  const oL=fix.clone().sub(L.eye).normalize(), oR=fix.clone().sub(R.eye).normalize();   // gaze axes
+  const hL=new V().crossVectors(EY,oL).normalize(), vL=new V().crossVectors(oL,hL);     // retinal frames
+  const hR=new V().crossVectors(EY,oR).normalize(), vR=new V().crossVectors(oR,hR);
+  // displayed fixation point: its disparity is what vergence nulls; its mean
+  // direction is the cyclopean centre (everything is referenced to it).
+  let HF=0,VF=0,verFx=0,verFy=0;
+  const fL=perceivedRay(fix,L.eye,L.cam,L.disp,S.dist), fR=perceivedRay(fix,R.eye,R.cam,R.disp,S.dist);
+  if(fL&&fR){
+    const [aLf,bLf]=retAngles(fL.g,oL,hL,vL),[aRf,bRf]=retAngles(fR.g,oR,hR,vR);
+    HF=aLf-aRf; VF=bLf-bRf; verFx=(aLf+aRf)/2; verFy=(bLf+bRf)/2;
+  }
+  let nDip=0,maxH=0,maxV=0; const insetPts=[], cyclo=[];
+  verts.forEach((P,i)=>{
+    const qL=perceivedRay(P,L.eye,L.cam,L.disp,S.dist), qR=perceivedRay(P,R.eye,R.cam,R.disp,S.dist);
+    if(!qL||!qR){ fuseDots[i].visible=false; cyclo.push(null); return; }
+    const [aL,bL]=retAngles(qL.g,oL,hL,vL),[aR,bR]=retAngles(qR.g,oR,hR,vR);
+    const ecc=0.5*(Math.hypot(aL,bL)+Math.hypot(aR,bR))*180/Math.PI;   // retinal eccentricity (deg)
+    const PH=S.panum.h0+S.panum.kh*ecc, PV=S.panum.v0+S.panum.kv*ecc;  // Panum semi-axes (arcmin)
+    // ---- TRUE percept (total disparity, ref. to fixation): cyclopean view ----
+    const Ht=(aL-aR)-HF, Vt=(bL-bR)-VF;
+    const fusTot=((Ht*RAD2AM/PH)**2+(Vt*RAD2AM/PV)**2)<=1;
+    cyclo.push({ cx:(aL+aR)/2-verFx, cy:(bL+bR)/2-verFy, dx:Ht, dy:Vt, fus:fusTot });  // version + disparity
+    // ---- analysis disparity (honours the error-only toggle): inset + HUD + dots
+    let H,Vv;
+    if(S.show.errOnly){                               // isolate what the rendering ADDED
+      const giL=P.clone().sub(L.eye).normalize(), giR=P.clone().sub(R.eye).normalize();
+      const [aLi,bLi]=retAngles(giL,oL,hL,vL),[aRi,bRi]=retAngles(giR,oR,hR,vR);
+      H=((aL-aR)-(aLi-aRi))-HF; Vv=((bL-bR)-(bLi-bRi))-VF;
+    } else { H=Ht; Vv=Vt; }
+    const Ham=H*RAD2AM, Vam=Vv*RAD2AM, nx=Ham/PH, ny=Vam/PV, fus=(nx*nx+ny*ny)<=1;
+    if(!fus) nDip++;
+    maxH=Math.max(maxH,Math.abs(Ham)); maxV=Math.max(maxV,Math.abs(Vam));
+    insetPts.push({nx,ny,fus});
+    fuseDots[i].visible=S.show.fusion; fuseDots[i].position.copy(P);
+    fuseDots[i].material.color.setHex(fus?0x46e07a:0xff5d5d);
+  });
+  setPos(gazeLines,[L.eye,fix,R.eye,fix]); gazeLines.visible=S.show.gaze;
+  fixMark.position.copy(fix); fixMark.visible=S.show.gaze;
+  axisObjs.forEach(o=>o.visible=S.show.axes);
+  $('f_n').innerHTML=nDip+'<small> / 8</small>';
+  $('f_h').innerHTML=maxH.toFixed(1)+'<small> ′</small>';
+  $('f_v').innerHTML=maxV.toFixed(1)+'<small> ′</small>';
+  $('cyclowrap').style.display=S.show.cyclo?'':'none';
+  drawInset(insetPts); if(S.show.cyclo) drawCyclopean(cyclo);
+
+  render();
+}
+function setEdges(obj,pts,allowNull){
+  const arr=[];
+  for(const [i,j] of EDGES){ if(allowNull&&(!pts[i]||!pts[j]))continue;
+    arr.push(pts[i].x,pts[i].y,pts[i].z,pts[j].x,pts[j].y,pts[j].z); }
+  obj.geometry.setAttribute('position',new THREE.Float32BufferAttribute(arr,3));
+  obj.geometry.computeBoundingSphere();
+}
+function setPos(obj,pts){
+  const arr=[]; pts.forEach(p=>arr.push(p.x,p.y,p.z));
+  obj.geometry.setAttribute('position',new THREE.Float32BufferAttribute(arr,3));
+}
+function setPointPos(obj,pts){ setPos(obj,pts); }
+
+/* normalised disparity-space inset: each vertex plotted at (ΔH/P_H, ΔV/P_V),
+   so the dashed unit circle is the Panum fusion boundary at every eccentricity. */
+const dcv=$('disp'), dctx=dcv.getContext('2d');
+function drawInset(pts){
+  const W=dcv.width,H=dcv.height,cx=W/2,cy=H/2,R=W*0.21,CL=2.4;
+  dctx.clearRect(0,0,W,H);
+  dctx.strokeStyle='#1a2729';dctx.lineWidth=2;
+  dctx.beginPath();dctx.moveTo(cx,10);dctx.lineTo(cx,H-10);dctx.moveTo(10,cy);dctx.lineTo(W-10,cy);dctx.stroke();
+  dctx.strokeStyle='#46e07a';dctx.lineWidth=3;dctx.setLineDash([7,6]);
+  dctx.beginPath();dctx.arc(cx,cy,R,0,Math.PI*2);dctx.stroke();dctx.setLineDash([]);
+  (pts||[]).forEach(p=>{ const x=cx+Math.max(-CL,Math.min(CL,p.nx))*R, y=cy-Math.max(-CL,Math.min(CL,p.ny))*R;
+    dctx.beginPath();dctx.arc(x,y,7,0,Math.PI*2);dctx.fillStyle=p.fus?'#46e07a':'#ff5d5d';dctx.fill();
+    dctx.lineWidth=2;dctx.strokeStyle='#08100f';dctx.stroke(); });
+  dctx.fillStyle='#5b736e';dctx.font='20px "IBM Plex Mono",monospace';
+  dctx.fillText('H',W-24,cy-8);dctx.fillText('V',cx+9,24);
+}
+
+/* cyclopean view: visual directions referenced to fixation (fovea at centre).
+   Fused vertices -> one cyan dot at the cyclopean (mean) direction; diplopic
+   vertices -> a left-eye (blue) and right-eye (pink) image at C ± disparity/2. */
+const ccv=$('cyclo'), cctx=ccv.getContext('2d');
+function drawCyclopean(pts){
+  const W=ccv.width,H=ccv.height; cctx.clearRect(0,0,W,H);
+  const xs=[0],ys=[0];                                   // include fovea
+  pts.forEach(p=>{ if(!p)return;
+    if(p.fus){xs.push(p.cx);ys.push(p.cy);}
+    else{xs.push(p.cx+p.dx/2,p.cx-p.dx/2);ys.push(p.cy+p.dy/2,p.cy-p.dy/2);} });
+  // fovea is pinned to the canvas centre; the cube slides around it with fixation
+  const ext=Math.max(0.012, ...xs.map(Math.abs), ...ys.map(Math.abs))*1.12;
+  const pad=22, SC=Math.min(W-2*pad,H-2*pad)/(2*ext);    // isotropic, fovea-centred
+  const X=u=>W/2+u*SC, Y=v=>H/2-v*SC;
+  // cyclopean wireframe through the version (mean) positions
+  cctx.strokeStyle='rgba(40,224,210,.30)';cctx.lineWidth=2;
+  EDGES.forEach(([i,j])=>{ if(!pts[i]||!pts[j])return;
+    cctx.beginPath();cctx.moveTo(X(pts[i].cx),Y(pts[i].cy));cctx.lineTo(X(pts[j].cx),Y(pts[j].cy));cctx.stroke(); });
+  // fovea crosshair at (0,0)
+  cctx.strokeStyle='#3a504c';cctx.lineWidth=1.5;const fx=X(0),fy=Y(0);
+  cctx.beginPath();cctx.moveTo(fx-13,fy);cctx.lineTo(fx+13,fy);cctx.moveTo(fx,fy-13);cctx.lineTo(fx,fy+13);cctx.stroke();
+  pts.forEach(p=>{ if(!p)return;
+    if(p.fus){ const x=X(p.cx),y=Y(p.cy);
+      cctx.beginPath();cctx.arc(x,y,8,0,Math.PI*2);cctx.fillStyle='#28e0d2';cctx.fill();
+      cctx.lineWidth=2;cctx.strokeStyle='#08100f';cctx.stroke();
+    } else {
+      const xl=X(p.cx+p.dx/2),yl=Y(p.cy+p.dy/2), xr=X(p.cx-p.dx/2),yr=Y(p.cy-p.dy/2);
+      cctx.strokeStyle='rgba(255,93,93,.75)';cctx.lineWidth=2;
+      cctx.beginPath();cctx.moveTo(xl,yl);cctx.lineTo(xr,yr);cctx.stroke();
+      cctx.lineWidth=2;cctx.strokeStyle='#08100f';
+      cctx.beginPath();cctx.arc(xl,yl,7,0,Math.PI*2);cctx.fillStyle='#5fb0ff';cctx.fill();cctx.stroke();
+      cctx.beginPath();cctx.arc(xr,yr,7,0,Math.PI*2);cctx.fillStyle='#ff7d9b';cctx.fill();cctx.stroke();
+    }});
+  const sc=$('cscale'); if(sc) sc.textContent='· span '+(2*ext*180/Math.PI).toFixed(1)+'°';
+}
+
+/* ===================================================================
+   custom orbit / pan controls
+   =================================================================== */
+let az=-0.55, pol=1.15, rad=4.2, target=new V(0,0,1.3);
+function place(){
+  const x=target.x+rad*Math.sin(pol)*Math.sin(az);
+  const y=target.y+rad*Math.cos(pol);
+  const z=target.z+rad*Math.sin(pol)*Math.cos(az);
+  cam.position.set(x,y,z); cam.lookAt(target);
+}
+let drag=null,px=0,py=0;
+cv.addEventListener('mousedown',e=>{drag=e.button===2?'pan':'orb';px=e.clientX;py=e.clientY;e.preventDefault();});
+addEventListener('mousemove',e=>{ if(!drag)return; const dx=e.clientX-px,dy=e.clientY-py;px=e.clientX;py=e.clientY;
+  if(drag==='orb'){az-=dx*0.006;pol=Math.max(0.05,Math.min(Math.PI-0.05,pol-dy*0.006));}
+  else{ const right=new V().subVectors(cam.position,target).cross(new V(0,1,0)).normalize();
+    const up=new V(0,1,0); target.addScaledVector(right,-dx*rad*0.0012).addScaledVector(up,dy*rad*0.0012);}
+  place();render();});
+addEventListener('mouseup',()=>drag=null);
+cv.addEventListener('contextmenu',e=>e.preventDefault());
+cv.addEventListener('wheel',e=>{rad=Math.max(0.4,Math.min(20,rad*(1+Math.sign(e.deltaY)*0.08)));place();render();e.preventDefault();},{passive:false});
+
+function resize(){const w=cv.clientWidth,h=cv.clientHeight;renderer.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();render();}
+function render(){renderer.render(scene,cam);}
+addEventListener('resize',resize);
+
+/* go */
+place(); resize(); update();
+</script>

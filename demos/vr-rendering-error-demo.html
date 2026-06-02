@@ -611,33 +611,32 @@ function drawCyclopean(pts){
   const ext=Math.max(0.012, ...xs.map(Math.abs), ...ys.map(Math.abs))*1.12;
   const pad=22, SC=Math.min(W-2*pad,H-2*pad)/(2*ext);    // isotropic, fovea-centred
   const X=u=>W/2+u*SC, Y=v=>H/2-v*SC;
-  const allFused = pts.some(Boolean) && pts.every(p=>!p||p.fus);
+  const meanP=i=>[pts[i].cx,pts[i].cy];
+  const leftP =i=>[pts[i].cx+pts[i].dx/2,pts[i].cy+pts[i].dy/2];   // left-eye image
+  const rightP=i=>[pts[i].cx-pts[i].dx/2,pts[i].cy-pts[i].dy/2];   // right-eye image
+  // a fused vertex is perceived single, so doubled edges anchor at its mean
+  const Lp=i=>pts[i].fus?meanP(i):leftP(i), Rp=i=>pts[i].fus?meanP(i):rightP(i);
+  const seg=(a,b,s,lw)=>{cctx.strokeStyle=s;cctx.lineWidth=lw;cctx.beginPath();cctx.moveTo(X(a[0]),Y(a[1]));cctx.lineTo(X(b[0]),Y(b[1]));cctx.stroke();};
+  const dot=(p,f,r)=>{cctx.beginPath();cctx.arc(X(p[0]),Y(p[1]),r,0,Math.PI*2);cctx.fillStyle=f;cctx.fill();cctx.lineWidth=2;cctx.strokeStyle='#08100f';cctx.stroke();};
 
-  function wire(posFn,stroke,lw){                        // skip edges with a missing endpoint
-    cctx.strokeStyle=stroke;cctx.lineWidth=lw;
-    EDGES.forEach(([i,j])=>{ if(!pts[i]||!pts[j])return; const a=posFn(i),b=posFn(j);
-      cctx.beginPath();cctx.moveTo(X(a[0]),Y(a[1]));cctx.lineTo(X(b[0]),Y(b[1]));cctx.stroke(); });
-  }
-  function dot(x,y,fill,r){ cctx.beginPath();cctx.arc(X(x),Y(y),r,0,Math.PI*2);
-    cctx.fillStyle=fill;cctx.fill();cctx.lineWidth=2;cctx.strokeStyle='#08100f';cctx.stroke(); }
-
-  // fovea crosshair at (0,0)
+  // fovea crosshair
   cctx.strokeStyle='#3a504c';cctx.lineWidth=1.5;const fx=X(0),fy=Y(0);
   cctx.beginPath();cctx.moveTo(fx-13,fy);cctx.lineTo(fx+13,fy);cctx.moveTo(fx,fy-13);cctx.lineTo(fx,fy+13);cctx.stroke();
 
-  if(allFused){                                          // single fused percept
-    wire(i=>[pts[i].cx,pts[i].cy],'rgba(40,224,210,.85)',2.5);
-    pts.forEach(p=>{ if(p) dot(p.cx,p.cy,'#28e0d2',6); });
-  } else {                                               // two monocular cubes
-    cctx.strokeStyle='rgba(255,93,93,.5)';cctx.lineWidth=1.5; // mark doubled corners
-    pts.forEach(p=>{ if(!p||p.fus)return;
-      cctx.beginPath();cctx.moveTo(X(p.cx+p.dx/2),Y(p.cy+p.dy/2));cctx.lineTo(X(p.cx-p.dx/2),Y(p.cy-p.dy/2));cctx.stroke(); });
-    wire(i=>[pts[i].cx+pts[i].dx/2,pts[i].cy+pts[i].dy/2],'rgba(95,176,255,.85)',2);   // left eye
-    wire(i=>[pts[i].cx-pts[i].dx/2,pts[i].cy-pts[i].dy/2],'rgba(255,125,155,.85)',2);  // right eye
-    pts.forEach(p=>{ if(!p)return;
-      dot(p.cx+p.dx/2,p.cy+p.dy/2,'#5fb0ff',5); dot(p.cx-p.dx/2,p.cy-p.dy/2,'#ff7d9b',5); });
-  }
-  const sc=$('cscale'); if(sc) sc.textContent='· span '+(2*ext*180/Math.PI).toFixed(1)+'° · '+(allFused?'fused':'diplopic');
+  // edges: single cyan if both ends fuse; else split into a left (blue) + right (pink) edge
+  EDGES.forEach(([i,j])=>{ if(!pts[i]||!pts[j])return;
+    if(pts[i].fus&&pts[j].fus){ seg(meanP(i),meanP(j),'rgba(40,224,210,.85)',2.4); }
+    else { seg(Lp(i),Lp(j),'rgba(95,176,255,.85)',2); seg(Rp(i),Rp(j),'rgba(255,125,155,.85)',2); }
+  });
+  // link the two images of each diplopic corner
+  cctx.strokeStyle='rgba(255,93,93,.5)';cctx.lineWidth=1.5;
+  pts.forEach(p=>{ if(!p||p.fus)return; cctx.beginPath();
+    cctx.moveTo(X(p.cx+p.dx/2),Y(p.cy+p.dy/2));cctx.lineTo(X(p.cx-p.dx/2),Y(p.cy-p.dy/2));cctx.stroke(); });
+  // corners: fused -> one cyan dot; diplopic -> blue + pink
+  let nDip=0;
+  pts.forEach((p,i)=>{ if(!p)return;
+    if(p.fus){ dot(meanP(i),'#28e0d2',6); } else { nDip++; dot(leftP(i),'#5fb0ff',5); dot(rightP(i),'#ff7d9b',5); } });
+  const sc=$('cscale'); if(sc) sc.textContent='· span '+(2*ext*180/Math.PI).toFixed(1)+'° · '+(nDip?nDip+' diplopic':'fused');
 }
 
 /* ===================================================================

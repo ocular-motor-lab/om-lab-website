@@ -604,34 +604,40 @@ function drawInset(pts){
 const ccv=$('cyclo'), cctx=ccv.getContext('2d');
 function drawCyclopean(pts){
   const W=ccv.width,H=ccv.height; cctx.clearRect(0,0,W,H);
-  const xs=[0],ys=[0];                                   // include fovea
-  pts.forEach(p=>{ if(!p)return;
-    if(p.fus){xs.push(p.cx);ys.push(p.cy);}
-    else{xs.push(p.cx+p.dx/2,p.cx-p.dx/2);ys.push(p.cy+p.dy/2,p.cy-p.dy/2);} });
-  // fovea is pinned to the canvas centre; the cube slides around it with fixation
+  // autofit includes both monocular images of every vertex + the fovea
+  const xs=[0],ys=[0];
+  pts.forEach(p=>{ if(!p)return; xs.push(p.cx+p.dx/2,p.cx-p.dx/2); ys.push(p.cy+p.dy/2,p.cy-p.dy/2); });
+  // fovea pinned to canvas centre; the cube slides around it with fixation
   const ext=Math.max(0.012, ...xs.map(Math.abs), ...ys.map(Math.abs))*1.12;
   const pad=22, SC=Math.min(W-2*pad,H-2*pad)/(2*ext);    // isotropic, fovea-centred
   const X=u=>W/2+u*SC, Y=v=>H/2-v*SC;
-  // cyclopean wireframe through the version (mean) positions
-  cctx.strokeStyle='rgba(40,224,210,.30)';cctx.lineWidth=2;
-  EDGES.forEach(([i,j])=>{ if(!pts[i]||!pts[j])return;
-    cctx.beginPath();cctx.moveTo(X(pts[i].cx),Y(pts[i].cy));cctx.lineTo(X(pts[j].cx),Y(pts[j].cy));cctx.stroke(); });
+  const allFused = pts.some(Boolean) && pts.every(p=>!p||p.fus);
+
+  function wire(posFn,stroke,lw){                        // skip edges with a missing endpoint
+    cctx.strokeStyle=stroke;cctx.lineWidth=lw;
+    EDGES.forEach(([i,j])=>{ if(!pts[i]||!pts[j])return; const a=posFn(i),b=posFn(j);
+      cctx.beginPath();cctx.moveTo(X(a[0]),Y(a[1]));cctx.lineTo(X(b[0]),Y(b[1]));cctx.stroke(); });
+  }
+  function dot(x,y,fill,r){ cctx.beginPath();cctx.arc(X(x),Y(y),r,0,Math.PI*2);
+    cctx.fillStyle=fill;cctx.fill();cctx.lineWidth=2;cctx.strokeStyle='#08100f';cctx.stroke(); }
+
   // fovea crosshair at (0,0)
   cctx.strokeStyle='#3a504c';cctx.lineWidth=1.5;const fx=X(0),fy=Y(0);
   cctx.beginPath();cctx.moveTo(fx-13,fy);cctx.lineTo(fx+13,fy);cctx.moveTo(fx,fy-13);cctx.lineTo(fx,fy+13);cctx.stroke();
-  pts.forEach(p=>{ if(!p)return;
-    if(p.fus){ const x=X(p.cx),y=Y(p.cy);
-      cctx.beginPath();cctx.arc(x,y,8,0,Math.PI*2);cctx.fillStyle='#28e0d2';cctx.fill();
-      cctx.lineWidth=2;cctx.strokeStyle='#08100f';cctx.stroke();
-    } else {
-      const xl=X(p.cx+p.dx/2),yl=Y(p.cy+p.dy/2), xr=X(p.cx-p.dx/2),yr=Y(p.cy-p.dy/2);
-      cctx.strokeStyle='rgba(255,93,93,.75)';cctx.lineWidth=2;
-      cctx.beginPath();cctx.moveTo(xl,yl);cctx.lineTo(xr,yr);cctx.stroke();
-      cctx.lineWidth=2;cctx.strokeStyle='#08100f';
-      cctx.beginPath();cctx.arc(xl,yl,7,0,Math.PI*2);cctx.fillStyle='#5fb0ff';cctx.fill();cctx.stroke();
-      cctx.beginPath();cctx.arc(xr,yr,7,0,Math.PI*2);cctx.fillStyle='#ff7d9b';cctx.fill();cctx.stroke();
-    }});
-  const sc=$('cscale'); if(sc) sc.textContent='· span '+(2*ext*180/Math.PI).toFixed(1)+'°';
+
+  if(allFused){                                          // single fused percept
+    wire(i=>[pts[i].cx,pts[i].cy],'rgba(40,224,210,.85)',2.5);
+    pts.forEach(p=>{ if(p) dot(p.cx,p.cy,'#28e0d2',6); });
+  } else {                                               // two monocular cubes
+    cctx.strokeStyle='rgba(255,93,93,.5)';cctx.lineWidth=1.5; // mark doubled corners
+    pts.forEach(p=>{ if(!p||p.fus)return;
+      cctx.beginPath();cctx.moveTo(X(p.cx+p.dx/2),Y(p.cy+p.dy/2));cctx.lineTo(X(p.cx-p.dx/2),Y(p.cy-p.dy/2));cctx.stroke(); });
+    wire(i=>[pts[i].cx+pts[i].dx/2,pts[i].cy+pts[i].dy/2],'rgba(95,176,255,.85)',2);   // left eye
+    wire(i=>[pts[i].cx-pts[i].dx/2,pts[i].cy-pts[i].dy/2],'rgba(255,125,155,.85)',2);  // right eye
+    pts.forEach(p=>{ if(!p)return;
+      dot(p.cx+p.dx/2,p.cy+p.dy/2,'#5fb0ff',5); dot(p.cx-p.dx/2,p.cy-p.dy/2,'#ff7d9b',5); });
+  }
+  const sc=$('cscale'); if(sc) sc.textContent='· span '+(2*ext*180/Math.PI).toFixed(1)+'° · '+(allFused?'fused':'diplopic');
 }
 
 /* ===================================================================

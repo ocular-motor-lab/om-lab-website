@@ -140,16 +140,6 @@ input[type=range]::-moz-range-thumb{width:13px;height:13px;border:2px solid var(
       <div class="row"><label>vert. growth<span><span class="v" id="o_pkv">0.8</span><span class="u">′/°</span></span></label><input type="range" id="pkv" min="0" max="4" step="0.1" value="0.8"></div>
     </div></details>
 
-    <details class="sec"><summary><b>Empirical horopter</b> &nbsp;<span style="color:var(--mut2);font-size:10px">(corresponding-point reference)</span></summary><div class="body">
-      <div class="row"><label>Hering–Hillebrand H<span><span class="v" id="o_eH">0.00</span></span></label><input type="range" id="eH" min="-0.2" max="0.5" step="0.01" value="0"></div>
-      <div class="row"><label>vertical-horopter shear ψ<span><span class="v" id="o_ePsi">0.00</span><span class="u">°</span></span></label><input type="range" id="ePsi" min="0" max="4" step="0.05" value="0"></div>
-      <div style="color:var(--mut2);font-size:10px;line-height:1.45;margin-top:6px">
-        0 = geometric (Vieth–Müller circle + straight vertical horopter). Both shift only the zero-disparity <i>reference</i> for fusion, vanishing at the fovea.<br>
-        <b>H</b>: horiz. horopter flattening, δ<sub>ref</sub>=−H·sin²ᾱ. Lit. ≈0.13 (range .04–.43; distance-dependent — flat at the abathic dist. ≈0.46 m, convex beyond).<br>
-        <b>ψ</b>: Helmholtz shear (top-back vertical horopter) as horiz. disparity ∝ elevation, δ<sub>ref</sub>=−ψ·β̄; carries <i>no</i> vertical disparity. Lit. ≈2° (mean retinal shear 1.6°, optimal 2.3°).
-      </div>
-    </div></details>
-
     <details class="sec" open><summary><b>Presets</b></summary><div class="body">
       <div class="chips" id="presets"></div>
       <div class="chips"><div class="chip warn" id="zeroAll">Zero errors</div><div class="chip warn" id="resetAll">Reset all</div></div>
@@ -183,7 +173,7 @@ input[type=range]::-moz-range-thumb{width:13px;height:13px;border:2px solid var(
       <div class="clegend"><span style="color:#46e07a">●</span> fused&nbsp; <span style="color:#5fb0ff">●</span> left img&nbsp; <span style="color:#ff7d9b">●</span> right img&nbsp; <span id="cscale" style="color:var(--mut2)"></span></div>
     </div>
     <div id="dispwrap">
-      <div class="t">disparity vs Panum · arcmin</div>
+      <div class="t">disparity ÷ Panum limit</div>
       <canvas id="disp" width="376" height="376"></canvas>
     </div>
     <div class="legend">
@@ -278,7 +268,6 @@ const S = {
   dL:{tx:0,ty:0,tz:0,yaw:0,pit:0,rol:0}, dR:{tx:0,ty:0,tz:0,yaw:0,pit:0,rol:0},
   fix:{x:0,y:0,z:2},
   panum:{h0:8,v0:4,kh:1.5,kv:0.8},
-  emp:{H:0, psi:0},                        // empirical horopter: Hering–Hillebrand H (dimensionless), shear psi (deg)
   show:{truth:true, recon:true, displays:true, pixels:false,
         fusion:true, gaze:true, errOnly:false, axes:true, cyclo:true}
 };
@@ -305,7 +294,6 @@ bindNested('fx',S.fix,'x','o_fx',v=>v.toFixed(2)); bindNested('fy',S.fix,'y','o_
 bindNested('fz',S.fix,'z','o_fz',v=>v.toFixed(2));
 bindNested('ph0',S.panum,'h0','o_ph0',v=>v.toFixed(1)); bindNested('pv0',S.panum,'v0','o_pv0',v=>v.toFixed(1));
 bindNested('pkh',S.panum,'kh','o_pkh',v=>v.toFixed(1)); bindNested('pkv',S.panum,'kv','o_pkv',v=>v.toFixed(1));
-bindNested('eH',S.emp,'H','o_eH',v=>v.toFixed(2)); bindNested('ePsi',S.emp,'psi','o_ePsi',v=>v.toFixed(2));
 
 function setFix(p){ S.fix.x=p.x;S.fix.y=p.y;S.fix.z=p.z;
   [['fx',p.x],['fy',p.y],['fz',p.z]].forEach(([id,v])=>{$(id).value=v;$('o_'+id).textContent=v.toFixed(2);}); update(); }
@@ -317,7 +305,7 @@ function curVerts(){ return cubeVerts(new V(S.cx,S.cy,S.cz),S.sz,[S.cyaw,S.cpit,
     ch.onclick=()=>setFix(curVerts()[i]); c.appendChild(ch); } })();
 
 /* build the 6-DOF error blocks for an eye */
-const DOF=[['tx','Δx','mm',-50,50,0.1],['ty','Δy','mm',-10,10,0.1],['tz','Δz','mm',-10,10,0.1],
+const DOF=[['tx','Δx','mm',-10,10,0.1],['ty','Δy','mm',-10,10,0.1],['tz','Δz','mm',-10,10,0.1],
            ['yaw','yaw','°',-5,5,0.05],['pit','pitch','°',-5,5,0.05],['rol','roll','°',-5,5,0.05]];
 function errBlock(container, eyeKey, label, cls){
   const wrap=document.createElement('div');
@@ -378,8 +366,7 @@ function syncAllUI(){
    ['sz','o_sz',2],['cyaw','o_cyaw',0],['cpit','o_cpit',0],['crol','o_crol',0]]
    .forEach(([id,out,dp])=>{$(id).value=S[id];$(out).textContent=dp?(+S[id]).toFixed(dp):S[id];});
   [['fx','o_fx',S.fix,'x',2],['fy','o_fy',S.fix,'y',2],['fz','o_fz',S.fix,'z',2],
-   ['ph0','o_ph0',S.panum,'h0',1],['pv0','o_pv0',S.panum,'v0',1],['pkh','o_pkh',S.panum,'kh',1],['pkv','o_pkv',S.panum,'kv',1],
-   ['eH','o_eH',S.emp,'H',2],['ePsi','o_ePsi',S.emp,'psi',2]]
+   ['ph0','o_ph0',S.panum,'h0',1],['pv0','o_pv0',S.panum,'v0',1],['pkh','o_pkh',S.panum,'kh',1],['pkv','o_pkv',S.panum,'kv',1]]
    .forEach(([id,out,obj,k,dp])=>{$(id).value=obj[k];$(out).textContent=obj[k].toFixed(dp);});
   syncErrUI();
   document.querySelectorAll('#toggles input').forEach(cb=>{cb.checked=!!S.show[cb.dataset.k];});
@@ -387,7 +374,7 @@ function syncAllUI(){
 function resetAll(){
   const d=JSON.parse(JSON.stringify(DEF));
   ['ipd','dist','pan','cx','cy','cz','sz','cyaw','cpit','crol'].forEach(k=>S[k]=d[k]);
-  Object.assign(S.fix,d.fix); Object.assign(S.panum,d.panum); Object.assign(S.emp,d.emp);
+  Object.assign(S.fix,d.fix); Object.assign(S.panum,d.panum);
   Object.assign(S.dL,d.dL); Object.assign(S.dR,d.dR); Object.assign(S.show,d.show);
   syncAllUI(); update();
 }
@@ -553,17 +540,8 @@ function update(){
     const [aL,bL]=retAngles(qL.g,oL,hL,vL),[aR,bR]=retAngles(qR.g,oR,hR,vR);
     const ecc=0.5*(Math.hypot(aL,bL)+Math.hypot(aR,bR))*180/Math.PI;   // retinal eccentricity (deg)
     const PH=S.panum.h0+S.panum.kh*ecc, PV=S.panum.v0+S.panum.kv*ecc;  // Panum semi-axes (arcmin)
-    // ---- empirical-horopter reference: shifts the zero-disparity locus off the
-    // geometric (VM-circle + straight vertical) horopter. Both terms are HORIZONTAL
-    // disparity offsets that vanish at the fovea, so they compose with fixation ref.
-    //   Hering–Hillebrand (Eq.3, Cooper/Burge/Banks 2011): cot αL−cot αR = H, expanded
-    //   to 1st order in disparity δ about cyclopean azimuth ᾱ ⇒ δ_ref = −H·sin²ᾱ.
-    //   Helmholtz shear (extorsion ψ): horiz. offset ∝ elevation ⇒ δ_ref = −ψ·β̄.
-    //   Vertical disparity stays geometric (no vert. disparity in corresponding points).
-    const abar=(aL+aR)/2, bbar=(bL+bR)/2, sa=Math.sin(abar);
-    const etaHref = -S.emp.H*sa*sa - (S.emp.psi*Math.PI/180)*bbar;   // radians
-    // ---- TRUE percept (total disparity, ref. to fixation AND horopter): cyclopean view ----
-    const Ht=(aL-aR)-HF-etaHref, Vt=(bL-bR)-VF;
+    // ---- TRUE percept (total disparity, ref. to fixation): cyclopean view ----
+    const Ht=(aL-aR)-HF, Vt=(bL-bR)-VF;
     const fusTot=((Ht*RAD2AM/PH)**2+(Vt*RAD2AM/PV)**2)<=1;
     cyclo.push({ cx:(aL+aR)/2-verFx, cy:(bL+bR)/2-verFy, dx:Ht, dy:Vt, fus:fusTot, fixated:(i===fixIdx) });  // version + disparity
     // ---- analysis disparity (honours the error-only toggle): inset + HUD + dots
@@ -576,7 +554,7 @@ function update(){
     const Ham=H*RAD2AM, Vam=Vv*RAD2AM, nx=Ham/PH, ny=Vam/PV, fus=(nx*nx+ny*ny)<=1;
     if(!fus) nDip++;
     maxH=Math.max(maxH,Math.abs(Ham)); maxV=Math.max(maxV,Math.abs(Vam));
-    insetPts.push({Ham,Vam,PH,PV,fus});
+    insetPts.push({nx,ny,fus});
     fuseDots[i].visible=S.show.fusion; fuseDots[i].position.copy(P);
     fuseDots[i].material.color.setHex(fus?0x46e07a:0xff5d5d);
   });
@@ -603,38 +581,21 @@ function setPos(obj,pts){
 }
 function setPointPos(obj,pts){ setPos(obj,pts); }
 
-/* disparity-space inset, FIXED arcmin scale: each vertex is plotted at its true
-   (ΔH, ΔV) in arcmin. One dashed ellipse shows Panum's area at the FOVEA (h0 × v0,
-   the baseline limit); dot COLOUR uses each vertex's own eccentricity-dependent limit,
-   so an eccentric fusable (green) dot can sit slightly outside the foveal ring. Axis
-   ticks mark arcmin; off-scale dots clamp to the rim as hollow rings. */
+/* normalised disparity-space inset: each vertex plotted at (ΔH/P_H, ΔV/P_V),
+   so the dashed unit circle is the Panum fusion boundary at every eccentricity. */
 const dcv=$('disp'), dctx=dcv.getContext('2d');
-const INSET_AM=40;                                   // fixed half-range (arcmin)
 function drawInset(pts){
-  const W=dcv.width,H=dcv.height,cx=W/2,cy=H/2,pad=20;
-  const R=Math.min(W,H)/2-pad, SC=R/INSET_AM;        // px per arcmin (isotropic)
+  const W=dcv.width,H=dcv.height,cx=W/2,cy=H/2,R=W*0.21,CL=2.4;
   dctx.clearRect(0,0,W,H);
-  // axes
   dctx.strokeStyle='#1a2729';dctx.lineWidth=2;
-  dctx.beginPath();dctx.moveTo(cx,cy-R-6);dctx.lineTo(cx,cy+R+6);dctx.moveTo(cx-R-6,cy);dctx.lineTo(cx+R+6,cy);dctx.stroke();
-  // arcmin ticks on the axes (labelled at 20′, 40′ on the +H arm)
-  dctx.strokeStyle='#243634';dctx.lineWidth=1;dctx.font='11px "IBM Plex Mono",monospace';dctx.fillStyle='#3a504c';
-  for(let a=10;a<=INSET_AM;a+=10){ const r=a*SC;
-    [[cx+r,1],[cx-r,1],[cy+r,0],[cy-r,0]].forEach(([t,horiz])=>{ dctx.beginPath();
-      if(horiz){dctx.moveTo(t,cy-4);dctx.lineTo(t,cy+4);}else{dctx.moveTo(cx-4,t);dctx.lineTo(cx+4,t);} dctx.stroke(); });
-    if(a%20===0) dctx.fillText(a+"′",cx+r-12,cy-6); }
-  // Panum's area: ONE ellipse = foveal limit (h0 × v0)
-  dctx.beginPath();dctx.ellipse(cx,cy,S.panum.h0*SC,S.panum.v0*SC,0,0,Math.PI*2);
-  dctx.strokeStyle='#46e07a';dctx.lineWidth=2.5;dctx.setLineDash([7,6]);dctx.stroke();dctx.setLineDash([]);
-  // dots at true (ΔH,ΔV); clamp off-scale points to the rim as hollow rings
-  (pts||[]).forEach(p=>{
-    let x=cx+p.Ham*SC, y=cy-p.Vam*SC; const off=Math.abs(p.Ham)>INSET_AM||Math.abs(p.Vam)>INSET_AM;
-    if(off){ const a=Math.atan2(-(y-cy),x-cx); x=cx+R*Math.cos(a); y=cy-R*Math.sin(a); }
-    dctx.beginPath();dctx.arc(x,y,7,0,Math.PI*2);
-    if(off){ dctx.lineWidth=2.5;dctx.strokeStyle=p.fus?'#46e07a':'#ff5d5d';dctx.stroke(); }
-    else { dctx.fillStyle=p.fus?'#46e07a':'#ff5d5d';dctx.fill();dctx.lineWidth=2;dctx.strokeStyle='#08100f';dctx.stroke(); } });
+  dctx.beginPath();dctx.moveTo(cx,10);dctx.lineTo(cx,H-10);dctx.moveTo(10,cy);dctx.lineTo(W-10,cy);dctx.stroke();
+  dctx.strokeStyle='#46e07a';dctx.lineWidth=3;dctx.setLineDash([7,6]);
+  dctx.beginPath();dctx.arc(cx,cy,R,0,Math.PI*2);dctx.stroke();dctx.setLineDash([]);
+  (pts||[]).forEach(p=>{ const x=cx+Math.max(-CL,Math.min(CL,p.nx))*R, y=cy-Math.max(-CL,Math.min(CL,p.ny))*R;
+    dctx.beginPath();dctx.arc(x,y,7,0,Math.PI*2);dctx.fillStyle=p.fus?'#46e07a':'#ff5d5d';dctx.fill();
+    dctx.lineWidth=2;dctx.strokeStyle='#08100f';dctx.stroke(); });
   dctx.fillStyle='#5b736e';dctx.font='20px "IBM Plex Mono",monospace';
-  dctx.fillText('H',W-22,cy-8);dctx.fillText('V',cx+9,22);
+  dctx.fillText('H',W-24,cy-8);dctx.fillText('V',cx+9,24);
 }
 
 /* cyclopean view: visual directions referenced to fixation (fovea at centre).

@@ -8,97 +8,108 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: #0f1117; color: #e0e0e0;
+    background: #f4f5f7; color: #1c2230;
     min-height: 100vh; display: flex; flex-direction: column;
-    align-items: center; padding: 40px 20px;
+    align-items: center; padding: 32px 24px;
   }
-  h1 { font-size: 1.6rem; font-weight: 600; margin-bottom: 6px; color: #fff; }
-  .subtitle { font-size: 0.85rem; color: #888; margin-bottom: 32px; }
+  h1 { font-size: 1.7rem; font-weight: 600; margin-bottom: 6px; color: #0f172a; }
+  .subtitle { font-size: 0.88rem; color: #64748b; margin-bottom: 28px; }
   .card {
-    background: #1a1d27; border: 1px solid #2a2d3a;
-    border-radius: 12px; padding: 28px; width: 100%; max-width: 820px;
-    margin-bottom: 20px;
+    background: #ffffff; border: 1px solid #e3e6ec;
+    border-radius: 12px; padding: 26px; width: 100%; max-width: 1160px;
+    margin-bottom: 20px; box-shadow: 0 1px 3px rgba(16,24,40,0.04);
   }
   .input-row { display: flex; gap: 10px; }
   textarea {
-    flex: 1; background: #0f1117; border: 1px solid #2a2d3a;
-    border-radius: 8px; color: #e0e0e0; font-size: 0.95rem;
+    flex: 1; background: #fff; border: 1px solid #d3d7e0;
+    border-radius: 8px; color: #1c2230; font-size: 0.95rem;
     padding: 12px 14px; resize: vertical; min-height: 80px;
     outline: none; transition: border-color 0.2s; font-family: inherit;
   }
-  textarea:focus { border-color: #4a6cf7; }
+  textarea:focus { border-color: #2563eb; }
   button {
-    background: #4a6cf7; border: none; border-radius: 8px; color: #fff;
+    background: #2563eb; border: none; border-radius: 8px; color: #fff;
     cursor: pointer; font-size: 0.95rem; font-weight: 600; padding: 0 22px;
     transition: background 0.2s, opacity 0.2s; white-space: nowrap;
     align-self: flex-end; height: 44px;
   }
-  button:hover { background: #3a5ce0; }
+  button:hover { background: #1d4ed8; }
   button:disabled { opacity: 0.45; cursor: not-allowed; }
   button.secondary {
-    background: #22253a; border: 1px solid #2a2d3a; color: #aaa;
+    background: #eef0f4; border: 1px solid #d3d7e0; color: #475569;
     font-weight: 500;
   }
-  button.secondary:hover { background: #2a2e45; color: #ddd; border-color: #4a6cf7; }
-  button.success { background: #1a6e3a; }
-  button.success:hover { background: #16593a; }
+  button.secondary:hover { background: #e3e8ef; color: #1c2230; border-color: #2563eb; }
+  button.success { background: #16a34a; }
+  button.success:hover { background: #15803d; }
   .examples { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px; }
   .example-chip {
-    background: #22253a; border: 1px solid #2a2d3a; border-radius: 20px;
-    color: #aaa; cursor: pointer; font-size: 0.78rem; padding: 5px 13px;
+    background: #eef0f4; border: 1px solid #d3d7e0; border-radius: 20px;
+    color: #475569; cursor: pointer; font-size: 0.78rem; padding: 5px 13px;
     transition: all 0.15s;
   }
-  .example-chip:hover { border-color: #4a6cf7; color: #ccc; background: #1e2135; }
-  .status { margin-top: 18px; font-size: 0.85rem; color: #888; min-height: 1.2em; }
-  .status.error { color: #f07070; }
+  .example-chip:hover { border-color: #2563eb; color: #1c2230; background: #e4ecff; }
+  .status { margin-top: 18px; font-size: 0.85rem; color: #64748b; min-height: 1.2em; }
+  .status.error { color: #dc2626; }
   .mode-badge {
     display: inline-block; font-size: 0.72rem; font-weight: 600;
     padding: 2px 8px; border-radius: 10px; margin-right: 6px;
     vertical-align: middle;
   }
-  .mode-single     { background: #1e3a6e; color: #7ab3f7; }
-  .mode-comparison { background: #1a3a28; color: #6fcf97; }
+  .mode-single     { background: #dbeafe; color: #1d4ed8; }
+  .mode-comparison { background: #dcfce7; color: #15803d; }
   .version-tag {
-    display: inline-block; font-size: 0.68rem; color: #555;
+    display: inline-block; font-size: 0.68rem; color: #94a3b8;
     font-family: monospace; margin-left: 8px; vertical-align: middle;
   }
   .result { margin-top: 24px; display: none; }
-  .result img { width: 100%; border-radius: 8px; border: 1px solid #2a2d3a; }
-  details { margin-top: 16px; border: 1px solid #2a2d3a; border-radius: 8px; overflow: hidden; }
-  summary { cursor: pointer; padding: 10px 14px; font-size: 0.82rem; color: #888;
-            background: #151820; user-select: none; }
-  summary:hover { color: #ccc; }
-  pre { background: #0f1117; color: #a0c0a0; font-size: 0.75rem;
+  .result img { width: 100%; border-radius: 8px; border: 1px solid #e3e6ec; background: #fff; }
+
+  /* Interactive figure (uPlot) with PNG toggle */
+  .fig-toolbar { display: flex; gap: 6px; align-items: center; margin-top: 20px; }
+  .fig-btn { background: #eef0f4; border: 1px solid #d3d7e0; color: #475569;
+             font-size: 0.72rem; padding: 4px 12px; border-radius: 6px; cursor: pointer; }
+  .fig-btn.on { background: #2563eb; border-color: #2563eb; color: #fff; }
+  .fig-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .plot-host { width: 100%; background: #fff; border: 1px solid #e3e6ec;
+               border-radius: 8px; padding: 6px 4px; margin-top: 10px; }
+  .plot-host .u-legend { color: #475569; }
+
+  details { margin-top: 16px; border: 1px solid #e3e6ec; border-radius: 8px; overflow: hidden; }
+  summary { cursor: pointer; padding: 10px 14px; font-size: 0.82rem; color: #64748b;
+            background: #f6f8fa; user-select: none; }
+  summary:hover { color: #1c2230; }
+  pre { background: #f6f8fa; color: #334155; font-size: 0.75rem;
         overflow-x: auto; padding: 14px; max-height: 320px; }
 
   /* Feedback */
   .feedback-section {
-    margin-top: 20px; padding: 18px; background: #151820;
-    border: 1px solid #2a2d3a; border-radius: 10px; display: none;
+    margin-top: 20px; padding: 18px; background: #f6f8fa;
+    border: 1px solid #e3e6ec; border-radius: 10px; display: none;
   }
-  .feedback-section h3 { font-size: 0.9rem; color: #ccc; margin-bottom: 12px; }
+  .feedback-section h3 { font-size: 0.9rem; color: #334155; margin-bottom: 12px; }
   .feedback-row { display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
   .radio-group { display: flex; gap: 14px; padding-top: 6px; flex-shrink: 0; }
   .radio-label {
     display: flex; align-items: center; gap: 6px;
-    font-size: 0.88rem; color: #aaa; cursor: pointer; user-select: none; white-space: nowrap;
+    font-size: 0.88rem; color: #475569; cursor: pointer; user-select: none; white-space: nowrap;
   }
-  .radio-label input[type=radio] { accent-color: #4a6cf7; cursor: pointer; width: 15px; height: 15px; }
+  .radio-label input[type=radio] { accent-color: #2563eb; cursor: pointer; width: 15px; height: 15px; }
   .feedback-comment {
-    flex: 1; min-width: 200px; background: #0f1117; border: 1px solid #2a2d3a;
-    border-radius: 6px; color: #e0e0e0; font-size: 0.85rem; padding: 8px 10px;
+    flex: 1; min-width: 200px; background: #fff; border: 1px solid #d3d7e0;
+    border-radius: 6px; color: #1c2230; font-size: 0.85rem; padding: 8px 10px;
     resize: vertical; min-height: 60px; outline: none; font-family: inherit;
     transition: border-color 0.2s;
   }
-  .feedback-comment:focus { border-color: #4a6cf7; }
+  .feedback-comment:focus { border-color: #2563eb; }
   .feedback-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
-  .feedback-disclaimer { font-size: 0.72rem; color: #555; margin-top: 8px; line-height: 1.5; }
-  .feedback-confirm { font-size: 0.82rem; color: #6fcf97; display: none; margin-top: 6px; }
+  .feedback-disclaimer { font-size: 0.72rem; color: #94a3b8; margin-top: 8px; line-height: 1.5; }
+  .feedback-confirm { font-size: 0.82rem; color: #16a34a; display: none; margin-top: 6px; }
 
   /* Spinner */
   .spinner {
     display: inline-block; width: 14px; height: 14px;
-    border: 2px solid #4a6cf7; border-top-color: transparent;
+    border: 2px solid #2563eb; border-top-color: transparent;
     border-radius: 50%; animation: spin 0.7s linear infinite;
     margin-right: 8px; vertical-align: middle;
   }
@@ -106,37 +117,37 @@
 
   /* Site footer links */
   .site-footer {
-    margin-top: 40px; margin-bottom: 16px; font-size: 0.75rem; color: #444;
+    margin-top: 40px; margin-bottom: 16px; font-size: 0.75rem; color: #94a3b8;
     display: flex; gap: 20px; align-items: center;
   }
-  .site-footer a { color: #555; text-decoration: none; }
-  .site-footer a:hover { color: #aaa; }
-  .site-footer .sep { color: #333; }
+  .site-footer a { color: #64748b; text-decoration: none; }
+  .site-footer a:hover { color: #2563eb; }
+  .site-footer .sep { color: #cbd5e1; }
 
   /* Avatar section */
   #avatar-section {
     display: none; margin-bottom: 20px;
-    border: 1px solid #2a2d3a; border-radius: 10px; overflow: hidden;
-    background: #111118;
+    border: 1px solid #e3e6ec; border-radius: 10px; overflow: hidden;
+    background: #eef0f4;
   }
   #avatar-canvas { width: 100%; height: 420px; display: block; }
   #playback-bar {
     display: flex; align-items: center; gap: 10px;
-    padding: 10px 14px; background: #151820; border-top: 1px solid #2a2d3a;
+    padding: 10px 14px; background: #f6f8fa; border-top: 1px solid #e3e6ec;
   }
   #play-btn {
-    background: #22253a; border: 1px solid #2a2d3a; color: #ccc;
+    background: #eef0f4; border: 1px solid #d3d7e0; color: #334155;
     border-radius: 6px; width: 36px; height: 32px; padding: 0;
     font-size: 1rem; flex-shrink: 0; align-self: auto;
   }
-  #play-btn:hover { border-color: #4a6cf7; color: #fff; background: #2a2e45; }
-  #scrubber { flex: 1; accent-color: #4a6cf7; height: 4px; cursor: pointer; }
+  #play-btn:hover { border-color: #2563eb; color: #1c2230; background: #e4ecff; }
+  #scrubber { flex: 1; accent-color: #2563eb; height: 4px; cursor: pointer; }
   #time-display {
-    font-size: 0.75rem; color: #777; font-family: monospace;
+    font-size: 0.75rem; color: #64748b; font-family: monospace;
     white-space: nowrap; flex-shrink: 0;
   }
   #avatar-loading {
-    position: absolute; font-size: 0.8rem; color: #555; pointer-events: none;
+    position: absolute; font-size: 0.8rem; color: #94a3b8; pointer-events: none;
   }
   .avatar-wrap {
     position: relative; display: flex; align-items: center; justify-content: center;
@@ -144,30 +155,63 @@
   /* Divider line between the two viewports — hidden in single-head mode */
   .avatar-wrap::after {
     content: ''; position: absolute; top: 0; bottom: 0; left: 50%;
-    width: 1px; background: #2a2d3a; pointer-events: none;
+    width: 1px; background: #d3d7e0; pointer-events: none;
   }
   .avatar-wrap.single-view::after { display: none; }
+
+  /* Patient-changes table — mirrors parameters.html styling but inlined here */
+  .param-table { width: 100%; border-collapse: collapse; background: #fff;
+                 border: 1px solid #e0e0e0; border-radius: 6px; font-size: 12px; }
+  .param-table th { background: #f5f5f5; padding: 8px 10px; text-align: left;
+                    font-weight: 600; border-bottom: 2px solid #e0e0e0;
+                    color: #1a1a2e; }
+  .param-table td { padding: 7px 10px; border-bottom: 1px solid #eee;
+                    vertical-align: top; }
+  .param-table tr:last-child td { border-bottom: none; }
+  .param-table .pname { font-family: 'SF Mono', Consolas, monospace;
+                        font-weight: 600; color: #1a1a2e; }
+  .param-table .pdefault { font-family: monospace; color: #888; }
+  .param-table .pnew { font-family: monospace; color: #c0392b; font-weight: 600; }
+  .param-table .panatomy { font-size: 11px; color: #666; font-style: italic; }
+  .param-table .ptag {
+    display: inline-block; padding: 2px 7px; border-radius: 10px;
+    font-size: 10px; font-weight: 600; margin: 1px 2px;
+  }
+  .param-table .tag-vn         { background: #d1ecf1; color: #0c5460; }
+  .param-table .tag-cerebellar { background: #fff3cd; color: #856404; }
+  .param-table .tag-ino        { background: #f5d4e8; color: #5c1c4a; }
+  .param-table .tag-cn         { background: #f8d7da; color: #721c24; }
+  .param-table .tag-phoria     { background: #e2eafc; color: #1d3a8a; }
+  .param-table .tag-other      { background: #e2e3e5; color: #383d41; }
+  .pchange-tab { background: #eef0f4; border: 1px solid #d3d7e0; border-radius: 4px;
+                 padding: 5px 12px; margin-right: 6px; cursor: pointer;
+                 font-size: 12px; color: #475569; }
+  .pchange-tab.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+  .pchange-empty { padding: 10px; color: #94a3b8; font-style: italic; font-size: 12px; }
   /* Scenario tabs for comparison mode */
   #avatar-tabs {
     display: none; flex-wrap: wrap; gap: 6px;
-    padding: 8px 10px 0; background: #111118;
+    padding: 8px 10px 0; background: #eef0f4;
   }
   .avatar-tab {
     padding: 4px 12px; font-size: 0.75rem; border-radius: 4px; cursor: pointer;
-    border: 1px solid #3a3d4a; background: #1a1d2a; color: #aaa;
+    border: 1px solid #d3d7e0; background: #fff; color: #475569;
     transition: background 0.15s, color 0.15s;
   }
-  .avatar-tab:hover  { background: #252836; color: #ddd; }
-  .avatar-tab.active { background: #2a4a7a; border-color: #4a7aaa; color: #eef; }
+  .avatar-tab:hover  { background: #e4ecff; color: #1c2230; }
+  .avatar-tab.active { background: #2563eb; border-color: #2563eb; color: #fff; }
   .avatar-labels {
     position: absolute; top: 8px; left: 0; right: 0;
     display: flex; pointer-events: none; z-index: 1;
   }
   .avatar-labels span {
-    flex: 1; text-align: center; font-size: 0.7rem; color: #555;
+    flex: 1; text-align: center; font-size: 0.7rem; color: #94a3b8;
     text-transform: uppercase; letter-spacing: 0.08em;
   }
 </style>
+<link rel="stylesheet" href="vendor/uPlot.min.css">
+<script src="vendor/uPlot.iife.min.js"></script>
+<script src="plotspec.js"></script>
 </head>
 <body>
 
@@ -215,9 +259,32 @@
       </div>
     </div>
 
-    <!-- Simulation plot -->
-    <img id="plot" src="" alt="Simulation plot"
-         style="width:100%;border-radius:8px;border:1px solid #2a2d3a;margin-top:20px;">
+    <!-- Interactive plots (uPlot) — primary view -->
+    <div class="plot-host" id="plot-host" style="display:none;margin-top:20px;"></div>
+
+    <!-- Patient parameter changes — populated from RunResponse.patient_changes -->
+    <div id="patient-changes-section" style="display:none;margin-top:18px;">
+      <h3 style="font-size:14px;margin-bottom:8px;color:#1a1a2e;">Patient parameters changed by the LLM</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:10px;">
+        Each row shows a parameter the LLM tuned for this scenario, with its
+        healthy default and the new value.  Same fields appear in
+        <a href="parameters.html" target="_blank">parameters.html</a> with full
+        context.  No row = the LLM left the patient at all defaults (healthy).
+      </p>
+      <div id="patient-changes-tabs" style="display:none;margin-bottom:8px;"></div>
+      <table class="param-table" id="patient-changes-table">
+        <thead><tr>
+          <th style="width:140px">Parameter</th>
+          <th style="width:72px">Default</th>
+          <th style="width:72px">New value</th>
+          <th style="width:44px">Units</th>
+          <th>Why it matters</th>
+          <th style="width:150px">Anatomical locus</th>
+          <th style="width:170px">Clinical examples</th>
+        </tr></thead>
+        <tbody id="patient-changes-body"></tbody>
+      </table>
+    </div>
 
     <!-- Feedback -->
     <div class="feedback-section" id="feedback-section">
@@ -248,6 +315,15 @@
     </div>
 
     <details><summary>JSON</summary><pre id="json-out"></pre></details>
+
+    <!-- Legacy static figure (matplotlib PNG) — hidden by default, behind a toggle. -->
+    <div id="png-toggle-wrap" style="margin-top:18px;display:none;">
+      <button id="png-toggle" class="fig-btn" type="button" onclick="togglePng()">Show static figure (PNG)</button>
+      <div id="png-figure" style="margin-top:10px;display:none;">
+        <img id="plot" src="" alt="Simulation figure"
+             style="width:100%;max-width:560px;border-radius:8px;border:1px solid #e3e6ec;display:block;">
+      </div>
+    </div>
   </div>
 </div>
 
@@ -283,6 +359,7 @@ async function run() {
   btn.disabled = true;
   result.style.display = 'none';
   document.getElementById('avatar-section').style.display = 'none';
+  document.getElementById('patient-changes-section').style.display = 'none';
   document.getElementById('feedback-section').style.display = 'none';
   document.getElementById('feedback-confirm').style.display = 'none';
   document.querySelectorAll('input[name="looks-correct"]').forEach(r => r.checked = false);
@@ -302,8 +379,17 @@ async function run() {
     _currentMode  = data.mode;
 
     document.getElementById('plot').src = 'data:image/png;base64,' + data.image_b64;
+    // PNG available but hidden by default — expose the toggle, reset to hidden.
+    document.getElementById('png-toggle-wrap').style.display = 'block';
+    document.getElementById('png-figure').style.display = 'none';
+    document.getElementById('png-toggle').textContent = 'Show static figure (PNG)';
     document.getElementById('json-out').textContent = JSON.stringify(data.detail_json, null, 2);
     result.style.display = 'block';
+
+    // Interactive, zoomable plots (uPlot) from the spec; PNG kept as a toggle.
+    // Guarded so a plotting hiccup can never block the avatar/feedback below.
+    try { renderInteractivePlot(data.plot_spec); }
+    catch (e) { console.error('renderInteractivePlot threw', e); }
 
     const badge = data.mode === 'comparison'
       ? '<span class="mode-badge mode-comparison">comparison</span>'
@@ -333,16 +419,21 @@ async function run() {
           avatarTabs.querySelectorAll('.avatar-tab').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
           window.loadEyeTrajectory(traj);
+          renderPatientChanges(traj.patient_changes || []);
         };
         avatarTabs.appendChild(btn);
       });
       window.loadEyeTrajectory(data.eye_trajectories[0]);
+      renderPatientChanges(data.eye_trajectories[0].patient_changes || []);
     } else if (data.eye_trajectory && typeof window.loadEyeTrajectory === 'function') {
       // Single mode: no tabs
       avatarTabs.innerHTML = '';
       avatarTabs.style.display = 'none';
       document.getElementById('avatar-section').style.display = 'block';
       window.loadEyeTrajectory(data.eye_trajectory);
+      renderPatientChanges(data.patient_changes || []);
+    } else {
+      renderPatientChanges(data.patient_changes || []);
     }
 
   } catch(e) {
@@ -353,6 +444,82 @@ async function run() {
     }
   } finally { btn.disabled = false; }
 }
+
+
+// ── Interactive plot (uPlot) with PNG toggle ──────────────────────────────────
+let _figHandle = null;
+
+function renderInteractivePlot(spec) {
+  const host = document.getElementById('plot-host');
+  if (_figHandle) { try { _figHandle.destroy(); } catch (e) {} _figHandle = null; }
+
+  const canInteractive = spec && (typeof uPlot !== 'undefined') && window.PlotSpec;
+  if (!canInteractive) { host.style.display = 'none'; return; }   // PNG below remains
+
+  host.style.display = 'block';                    // visible before render → correct width
+  try {
+    _figHandle = window.PlotSpec.render(host, spec);
+  } catch (e) {
+    console.error('Interactive plot failed; the static figure below remains.', e);
+    host.style.display = 'none';
+  }
+}
+
+// Drive the synced time cursor on the plots from the 3D playback clock.
+window.setPlotTime = function (t) {
+  if (_figHandle && _figHandle.setTime) { try { _figHandle.setTime(t); } catch (e) {} }
+};
+
+
+// ── Patient-changes table rendering ───────────────────────────────────────────
+function _formatValue(v) {
+  if (Array.isArray(v)) {
+    // Compact list: max 12 entries shown, comma-separated, monospaced
+    return '[' + v.map(x => Number(x).toFixed(2).replace(/\.?0+$/, '')).join(', ') + ']';
+  }
+  if (typeof v === 'number') return Number(v.toFixed(4)).toString();
+  return String(v);
+}
+
+function _formatDescription(desc) {
+  // First sentence (or first 220 chars), rest tucked into title attr.
+  const oneLine = (desc || '').replace(/\s+/g, ' ').trim();
+  const cut = oneLine.length > 220
+    ? oneLine.slice(0, 220).replace(/[.,;]?\s*[^\s.,;]*$/, '') + '…'
+    : oneLine;
+  return `<span title="${oneLine.replace(/"/g, '&quot;')}">${cut}</span>`;
+}
+
+function renderPatientChanges(changes) {
+  const section = document.getElementById('patient-changes-section');
+  const tbody   = document.getElementById('patient-changes-body');
+  tbody.innerHTML = '';
+
+  if (!changes || changes.length === 0) {
+    // Nothing changed → hide the whole section (don't show an empty table).
+    section.style.display = 'none';
+    return;
+  }
+
+  changes.forEach(c => {
+    const disorders = (c.disorders || []).map(d =>
+      `<span class="ptag tag-${d.tag}">${d.name}: ${_formatValue(d.value)}</span>`
+    ).join(' ');
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="pname">${c.name}</td>
+      <td class="pdefault">${_formatValue(c.default)}</td>
+      <td class="pnew">${_formatValue(c.value)}</td>
+      <td>${c.units || ''}</td>
+      <td>${_formatDescription(c.description)}</td>
+      <td class="panatomy">${c.anatomy || ''}</td>
+      <td>${disorders}</td>`;
+    tbody.appendChild(tr);
+  });
+  section.style.display = 'block';
+}
+
 
 async function submitFeedback() {
   if (!_currentRunId) return;
@@ -386,6 +553,14 @@ function downloadData() {
   window.open(getBackend() + '/download/' + _currentRunId);
 }
 
+function togglePng() {
+  const fig = document.getElementById('png-figure');
+  const btn = document.getElementById('png-toggle');
+  const show = fig.style.display === 'none';
+  fig.style.display = show ? 'block' : 'none';
+  btn.textContent = show ? 'Hide static figure (PNG)' : 'Show static figure (PNG)';
+}
+
 // Play/scrub — delegates to module-scope functions exposed on window
 function togglePlay() { if (window._avatarTogglePlay) window._avatarTogglePlay(); }
 function onScrub(v)   { if (window._avatarOnScrub)    window._avatarOnScrub(parseInt(v)); }
@@ -406,286 +581,18 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 }
 </script>
-<script type="module">
-import * as THREE     from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-
-// ── Renderer + scene ──────────────────────────────────────────────────────────
-const canvas   = document.getElementById('avatar-canvas');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(window.devicePixelRatio);
-renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.autoClear = false;   // we clear manually between viewports
-
-const W = () => canvas.clientWidth  || 820;
-const H = () => canvas.clientHeight || 420;
-
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x111118);
-
-// Two cameras — world view (left) and head-fixed view (right)
-const worldCam = new THREE.PerspectiveCamera(28, W() / 2 / H(), 0.001, 10000);
-const headCam  = new THREE.PerspectiveCamera(28, W() / 2 / H(), 0.001, 10000);
-
-function resize() {
-  renderer.setSize(W(), H(), false);
-  // Camera aspect ratios are set per-frame in renderViewports() based on _headMoves
-}
-new ResizeObserver(resize).observe(canvas);
-resize();
-
-scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-const key = new THREE.DirectionalLight(0xffffff, 1.4);
-key.position.set(1, 3, 2); scene.add(key);
-scene.add(new THREE.DirectionalLight(0x8899ff, 0.4)).position.set(-2, 1, 1);
-
-// ── Avatar ────────────────────────────────────────────────────────────────────
-let leftEyeBone  = null;
-let rightEyeBone = null;
-let headBone     = null;
-let restL = null, restR = null, restHead = null;
-let coverMeshL   = null, coverMeshR = null;
-
-const AVATAR_PATH = 'avatar/scene.gltf';
-
-new GLTFLoader().load(AVATAR_PATH, (gltf) => {
-  const model = gltf.scene;
-  scene.add(model);
-
-  model.traverse(obj => {
-    if (obj.name === 'LeftEye_08')  leftEyeBone  = obj;
-    if (obj.name === 'RightEye_09') rightEyeBone = obj;
-  });
-
-  // Rotate the whole model for head/body movement — avoids neck artifacts
-  headBone = model;
-
-  if (leftEyeBone)  restL    = leftEyeBone.rotation.clone();
-  if (rightEyeBone) restR    = rightEyeBone.rotation.clone();
-  restHead = model.rotation.clone();
-  console.log('Bones found — leftEye:', !!leftEyeBone, 'rightEye:', !!rightEyeBone);
-  console.log('restHead:', restHead);
-
-  // Use actual eye bone world positions for precise camera targeting
-  const box  = new THREE.Box3().setFromObject(model);
-  const size = box.getSize(new THREE.Vector3());
-  const near = size.y * 0.001, far = size.y * 20;
-
-  const posL = new THREE.Vector3(), posR = new THREE.Vector3();
-  leftEyeBone.getWorldPosition(posL);
-  rightEyeBone.getWorldPosition(posR);
-  const eyeMid = new THREE.Vector3().addVectors(posL, posR).multiplyScalar(0.5);
-
-  // Head-fixed (right): close-up, eye midpoint target
-  headCam.position.set(eyeMid.x, eyeMid.y, eyeMid.z + size.y * 0.18);
-  headCam.lookAt(eyeMid);
-  headCam.near = near; headCam.far = far; headCam.updateProjectionMatrix();
-
-  // World (left): further back so neck is visible, same target
-  worldCam.position.set(eyeMid.x, eyeMid.y, eyeMid.z + size.y * 0.26);
-  worldCam.lookAt(eyeMid);
-  worldCam.near = near; worldCam.far = far; worldCam.updateProjectionMatrix();
-
-  // Build procedural eye-cover patches (parented to model root = head-fixed).
-  // posL / posR are world positions — convert to model-local before using as
-  // child position, and push forward (+Z world) so they sit in front of the face.
-  const eyeL_local = posL.clone();
-  const eyeR_local = posR.clone();
-  model.worldToLocal(eyeL_local);
-  model.worldToLocal(eyeR_local);
-  // Forward direction in model-local space (world +Z = toward camera)
-  const fwdLocal = new THREE.Vector3(0, 0, 1)
-      .transformDirection(model.matrixWorld.clone().invert());
-  const fwdOffset = size.y * 0.04;    // clear of face surface
-
-  const coverGeo = new THREE.CircleGeometry(size.y * 0.022, 48);
-  const coverMat = new THREE.MeshStandardMaterial({
-    color: 0x0a0508, transparent: true, opacity: 0.82,
-    depthWrite: false, depthTest: false,
-  });
-  coverMeshL = new THREE.Mesh(coverGeo, coverMat);
-  coverMeshR = new THREE.Mesh(coverGeo, coverMat.clone());
-  coverMeshL.renderOrder = 1;
-  coverMeshR.renderOrder = 1;
-  coverMeshL.position.copy(eyeL_local).addScaledVector(fwdLocal, fwdOffset);
-  coverMeshR.position.copy(eyeR_local).addScaledVector(fwdLocal, fwdOffset);
-  model.add(coverMeshL);
-  model.add(coverMeshR);
-  // Orient disk face toward camera regardless of model's rest rotation
-  coverMeshL.lookAt(headCam.position);
-  coverMeshR.lookAt(headCam.position);
-  coverMeshL.visible = false;
-  coverMeshR.visible = false;
-
-  document.getElementById('avatar-loading').style.display = 'none';
-
-}, undefined, err => {
-  console.error('Avatar load error:', err);
-  document.getElementById('avatar-loading').textContent = 'Avatar failed to load';
-});
-
-// ── Bone application ──────────────────────────────────────────────────────────
-const DEG = Math.PI / 180;
-
-// eye_pos in simulation = head-fixed plant state [yaw, pitch, roll] deg
-// head_pos              = integrated head velocity [yaw, pitch, roll] deg
-function applyFrame(fi) {
-  if (!leftEyeBone || !rightEyeBone || !_traj) return;
-  const L = _traj.left[fi];
-  const R = _traj.right[fi];
-
-  leftEyeBone.rotation.set(
-    restL.x - L[1] * DEG,   // pitch
-    restL.y - L[0] * DEG,   // yaw
-    restL.z
-  );
-  rightEyeBone.rotation.set(
-    restR.x - R[1] * DEG,
-    restR.y - R[0] * DEG,
-    restR.z
-  );
-
-  // Head rotation for world view (applied before left render, removed before right)
-  if (headBone && _traj.head) {
-    const Hd = _traj.head[fi];
-    headBone.rotation.set(
-      restHead.x - Hd[1] * DEG,   // pitch
-      restHead.y - Hd[0] * DEG,   // yaw
-      restHead.z
-    );
-  }
-
-  // Cover patches
-  if (coverMeshL) coverMeshL.visible = !!(_traj.cover_L && _traj.cover_L[fi]);
-  if (coverMeshR) coverMeshR.visible = !!(_traj.cover_R && _traj.cover_R[fi]);
-}
-
-// ── Playback ──────────────────────────────────────────────────────────────────
-let _traj      = null;
-let _frame     = 0;
-let _playing   = false;
-let _lastRafTs = null;
-let _headMoves = false;
-
-function updateTimeDisplay(fi) {
-  if (!_traj) return;
-  document.getElementById('time-display').textContent =
-    `${(fi / _traj.fps).toFixed(1)} / ${_traj.duration_s.toFixed(1)} s`;
-}
-
-window.loadEyeTrajectory = function(traj) {
-  _traj    = traj;
-  _frame   = 0;
-  _playing = false;
-
-  // Detect meaningful head movement (any axis > 1 deg peak displacement)
-  _headMoves = false;
-  if (traj.head) {
-    const maxDisp = Math.max(
-      ...traj.head.map(h => Math.sqrt(h[0]*h[0] + h[1]*h[1] + h[2]*h[2]))
-    );
-    _headMoves = maxDisp > 1.0;
-  }
-
-  // Show/hide world-view label + divider
-  const labels = document.querySelectorAll('.avatar-labels span');
-  if (labels[0]) labels[0].style.display = _headMoves ? '' : 'none';
-  const wrap = document.querySelector('.avatar-wrap');
-  if (wrap) wrap.classList.toggle('single-view', !_headMoves);
-
-  document.getElementById('play-btn').textContent = '▶';
-  document.getElementById('scrubber').max         = traj.n_frames - 1;
-  document.getElementById('scrubber').value       = 0;
-  updateTimeDisplay(0);
-  applyFrame(0);
-};
-
-window._avatarTogglePlay = function() {
-  if (!_traj) return;
-  _playing = !_playing;
-  if (_playing) {
-    if (_frame >= _traj.n_frames - 1) _frame = 0;
-    _lastRafTs = null;
-    document.getElementById('play-btn').textContent = '⏸';
-  } else {
-    document.getElementById('play-btn').textContent = '▶';
-  }
-};
-
-window._avatarOnScrub = function(val) {
-  if (!_traj) return;
-  _frame = val; _lastRafTs = null;
-  applyFrame(val);
-  updateTimeDisplay(val);
-};
-
-// ── Render loop (scissor split) ───────────────────────────────────────────────
-function renderViewports() {
-  const w = W(), h = H();
-  const fi = Math.min(Math.floor(_frame), _traj ? _traj.n_frames - 1 : 0);
-
-  renderer.clear();
-
-  if (_headMoves) {
-    // Split: left = world view, right = head-fixed view
-    const hw = Math.floor(w / 2);
-    const a  = hw / h;
-    worldCam.aspect = a; worldCam.updateProjectionMatrix();
-    headCam.fov = 28; headCam.aspect = a; headCam.updateProjectionMatrix();
-
-    // Left — world view: apply head rotation
-    applyFrame(fi);
-    renderer.setViewport(0, 0, hw, h);
-    renderer.setScissor(0, 0, hw, h);
-    renderer.setScissorTest(true);
-    renderer.render(scene, worldCam);
-
-    // Right — head-fixed view: head bone at rest, eyes unchanged
-    if (headBone && restHead) headBone.rotation.copy(restHead);
-    renderer.setViewport(hw, 0, w - hw, h);
-    renderer.setScissor(hw, 0, w - hw, h);
-    renderer.render(scene, headCam);
-  } else {
-    // No head movement — single full-width head-fixed view, zoomed in on eyes
-    headCam.fov = 14; headCam.aspect = w / h; headCam.updateProjectionMatrix();
-    applyFrame(fi);
-    if (headBone && restHead) headBone.rotation.copy(restHead);
-    renderer.setViewport(0, 0, w, h);
-    renderer.setScissor(0, 0, w, h);
-    renderer.setScissorTest(true);
-    renderer.render(scene, headCam);
-  }
-}
-
-function animate(ts) {
-  requestAnimationFrame(animate);
-
-  if (_playing && _traj) {
-    if (_lastRafTs !== null) {
-      _frame += (ts - _lastRafTs) / 1000 * _traj.fps;
-      if (_frame >= _traj.n_frames) {
-        _frame = _traj.n_frames - 1; _playing = false;
-        document.getElementById('play-btn').textContent = '▶';
-      }
-      const fi = Math.min(Math.floor(_frame), _traj.n_frames - 1);
-      applyFrame(fi);
-      document.getElementById('scrubber').value = fi;
-      updateTimeDisplay(fi);
-    }
-    _lastRafTs = ts;
-  }
-
-  renderViewports();
-}
-requestAnimationFrame(animate);
-</script>
+<script type="module" src="avatar.js"></script>
 
 <div class="site-footer">
+  <a href="gallery.html">Gallery</a>
+  <span class="sep">·</span>
   <a href="benchmarks/">Benchmarks</a>
   <span class="sep">·</span>
   <a href="clinical_benchmarks/">Clinical Benchmarks</a>
   <span class="sep">·</span>
   <a href="parameters.html">Parameters</a>
+  <span class="sep">·</span>
+  <a href="states.html">States &amp; activations</a>
 </div>
 
 </body>

@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OculomotorSim — Gallery</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f4f5f7; color: #1c2230; height: 100vh; display: flex;
+    flex-direction: column; overflow: hidden;
+  }
+  header {
+    background: #fff; border-bottom: 1px solid #e3e6ec;
+    padding: 0 18px; display: flex; align-items: center; gap: 14px;
+    flex-shrink: 0; height: 48px;
+  }
+  header .title { font-size: 0.85rem; font-weight: 600; color: #0f172a;
+                  letter-spacing: 0.04em; }
+  header .home { font-size: 0.78rem; color: #2563eb; text-decoration: none; }
+  header .home:hover { text-decoration: underline; }
+  header input {
+    background: #fff; border: 1px solid #d3d7e0; border-radius: 6px;
+    color: #333; font-size: 0.8rem; padding: 5px 10px; width: 240px; outline: none;
+  }
+  header input:focus { border-color: #2563eb; }
+  .status { font-size: 0.72rem; color: #94a3b8; margin-left: auto; white-space: nowrap; }
+  .status.err { color: #dc2626; }
+  .wide-btn {
+    background: #eef0f4; border: 1px solid #d3d7e0; color: #475569;
+    font-size: 0.72rem; padding: 5px 11px; border-radius: 6px; cursor: pointer;
+  }
+  .wide-btn.on { background: #2563eb; border-color: #2563eb; color: #fff; }
+
+  .layout { display: flex; flex: 1; overflow: hidden; }
+  .list-panel {
+    width: 34%; min-width: 0; border-right: 1px solid #e3e6ec;
+    overflow-y: auto; flex-shrink: 0; transition: width 0.15s ease; background: #fff;
+  }
+  .list-panel.collapsed { width: 0; border-right: none; overflow: hidden; }
+  .row {
+    padding: 9px 12px; border-bottom: 1px solid #edeff3; cursor: pointer;
+    display: flex; flex-direction: column; gap: 3px; transition: background 0.1s;
+  }
+  .row:hover { background: #eef3ff; }
+  .row.active { background: #e4ecff; border-left: 3px solid #4a6cf7; padding-left: 9px; }
+  .row .r-top { display: flex; align-items: center; gap: 8px; }
+  .row .r-prompt { font-size: 0.8rem; color: #1f2937; overflow: hidden;
+                   text-overflow: ellipsis; white-space: nowrap; }
+  .row .r-meta { font-size: 0.68rem; color: #94a3b8; }
+  .mode-badge {
+    display: inline-block; font-size: 0.6rem; font-weight: 700; padding: 1px 6px;
+    border-radius: 8px; text-transform: uppercase; letter-spacing: 0.04em; flex-shrink: 0;
+  }
+  .mode-single     { background: #dbeafe; color: #1d4ed8; }
+  .mode-comparison { background: #dcfce7; color: #15803d; }
+  .ok-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .ok-correct   { background: #22c55e; }
+  .ok-incorrect { background: #ef4444; }
+  .ok-none      { background: #cbd0d8; }
+  .row.hidden { display: none; }
+
+  .detail-panel {
+    flex: 1; min-width: 0; overflow-y: auto; padding: 18px 20px;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .empty { flex: 1; display: flex; align-items: center; justify-content: center;
+           color: #aab; font-size: 0.9rem; text-align: center; line-height: 1.8; }
+  .d-title { font-size: 1.05rem; font-weight: 600; color: #0f172a; }
+  .d-prompt { font-size: 0.9rem; color: #334155; line-height: 1.5; }
+  .d-meta { font-size: 0.72rem; color: #94a3b8; }
+  .plot-host { width: 100%; background: #fff; border: 1px solid #e3e6ec;
+               border-radius: 8px; padding: 6px 4px; }
+  .plot-host .u-legend { color: #475569; }
+  .loading { color: #94a3b8; font-size: 0.85rem; }
+  .d-narrative { font-size: 0.85rem; color: #475569; line-height: 1.55;
+                 background: #f6f8fa; border: 1px solid #e3e6ec; border-radius: 8px;
+                 padding: 10px 12px; }
+  details.json-block { border: 1px solid #e3e6ec; border-radius: 8px; overflow: hidden; }
+  details.json-block summary { cursor: pointer; padding: 8px 12px; font-size: 0.78rem;
+                 color: #64748b; background: #f6f8fa; user-select: none; }
+  details.json-block pre { background: #f6f8fa; color: #334155; font-size: 0.72rem;
+                 overflow-x: auto; padding: 12px; max-height: 320px; margin: 0; }
+
+  /* ── Shared 3D avatar + playback (same block as the simulator page) ── */
+  #avatar-section { display: none; border: 1px solid #e3e6ec; border-radius: 10px;
+                    overflow: hidden; background: #eef0f4; }
+  #avatar-canvas { width: 100%; height: 420px; display: block; }
+  #playback-bar { display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+                  background: #f6f8fa; border-top: 1px solid #e3e6ec; }
+  #play-btn { background: #eef0f4; border: 1px solid #d3d7e0; color: #334155;
+              border-radius: 6px; width: 36px; height: 32px; padding: 0; font-size: 1rem;
+              flex-shrink: 0; cursor: pointer; }
+  #play-btn:hover { border-color: #2563eb; color: #1c2230; background: #e4ecff; }
+  #scrubber { flex: 1; accent-color: #2563eb; height: 4px; cursor: pointer; }
+  #time-display { font-size: 0.75rem; color: #64748b; font-family: monospace;
+                  white-space: nowrap; flex-shrink: 0; }
+  #avatar-loading { position: absolute; font-size: 0.8rem; color: #94a3b8; pointer-events: none; }
+  .avatar-wrap { position: relative; display: flex; align-items: center; justify-content: center; }
+  .avatar-wrap::after { content: ''; position: absolute; top: 0; bottom: 0; left: 50%;
+                        width: 1px; background: #d3d7e0; pointer-events: none; }
+  .avatar-wrap.single-view::after { display: none; }
+  #avatar-tabs { display: none; flex-wrap: wrap; gap: 6px; padding: 8px 10px 0; background: #eef0f4; }
+  .avatar-tab { padding: 4px 12px; font-size: 0.75rem; border-radius: 4px; cursor: pointer;
+                border: 1px solid #d3d7e0; background: #fff; color: #475569; }
+  .avatar-tab:hover { background: #e4ecff; color: #1c2230; }
+  .avatar-tab.active { background: #2563eb; border-color: #2563eb; color: #fff; }
+  .avatar-labels { position: absolute; top: 8px; left: 0; right: 0; display: flex;
+                   pointer-events: none; z-index: 1; }
+  .avatar-labels span { flex: 1; text-align: center; font-size: 0.7rem; color: #94a3b8;
+                        text-transform: uppercase; letter-spacing: 0.08em; }
+</style>
+<link rel="stylesheet" href="vendor/uPlot.min.css">
+<script src="vendor/uPlot.iife.min.js"></script>
+<script src="plotspec.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three":         "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module" src="avatar.js"></script>
+</head>
+<body>
+
+<header>
+  <a class="home" href="index.html">&#8592; Simulator</a>
+  <span class="title">Gallery</span>
+  <input id="search" placeholder="Filter by prompt…" oninput="applyFilter(this.value)">
+  <button id="wideBtn" class="wide-btn" onclick="toggleWide()" title="Hide the list to give the plot full width">&#10530; Wide</button>
+  <span class="status" id="status">connecting…</span>
+</header>
+
+<div class="layout">
+  <div class="list-panel" id="listPanel"></div>
+  <div class="detail-panel" id="detail">
+    <div class="empty" id="emptyMsg">Select a featured run to view its narrative, 3D playback, and plots.</div>
+    <!-- Persistent viewer: same block as the simulator (narrative → 3D → graphs) -->
+    <div id="viewer" style="display:none; flex-direction:column; gap:14px;">
+      <div id="d-head"></div>
+      <div id="avatar-section">
+        <div id="avatar-tabs"></div>
+        <div class="avatar-wrap">
+          <canvas id="avatar-canvas"></canvas>
+          <span id="avatar-loading">Loading avatar…</span>
+          <div class="avatar-labels"><span>World view</span><span>Head-fixed</span></div>
+        </div>
+        <div id="playback-bar">
+          <button id="play-btn" onclick="togglePlay()" title="Play / Pause">▶</button>
+          <input type="range" id="scrubber" min="0" max="100" value="0" oninput="onScrub(this.value)">
+          <span id="time-display">0.0 / 0.0 s</span>
+        </div>
+      </div>
+      <div class="plot-host" id="plot-host"></div>
+      <details class="json-block" id="json-block">
+        <summary>LLM output (full scenario JSON)</summary>
+        <pre id="d-json"></pre>
+      </details>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Backend URL (same auto-detect as the simulator page) ──────────────────────
+function getBackend() {
+  const param = new URLSearchParams(window.location.search).get('backend');
+  if (param) return param.replace(/\/$/, '');
+  const stored = localStorage.getItem('oculomotor_backend');
+  if (stored) return stored;
+  const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+  return isLocal
+    ? window.location.origin
+    : 'https://giggling-confused-thriving.ngrok-free.dev';
+}
+const BACKEND = getBackend();
+
+let _rows = [];
+let _figHandle = null;
+let _activeId = null;
+
+function esc(s) {
+  return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function fmtTs(ts) {
+  const m = (ts || '').match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+  return m ? `${m[1]}-${m[2]}-${m[3]} ${m[4]}:${m[5]}` : (ts || '').slice(0, 10);
+}
+function okClass(lc) {
+  if (lc === 'correct' || lc === 'True')  return 'ok-correct';
+  if (lc === 'incorrect' || lc === 'False') return 'ok-incorrect';
+  return 'ok-none';
+}
+
+// ── Load the index from the backend ───────────────────────────────────────────
+async function loadIndex() {
+  const status = document.getElementById('status');
+  try {
+    // Public gallery shows only curated favorites.
+    const resp = await fetch(BACKEND + '/runs?favorites_only=true');
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    _rows = await resp.json();
+    status.className = 'status';
+    status.textContent = `${_rows.length} featured · ${BACKEND.replace(/^https?:\/\//, '')}`;
+    if (_rows.length === 0) {
+      document.getElementById('listPanel').innerHTML =
+        '<div style="padding:16px;color:#94a3b8;font-size:0.82rem;line-height:1.6">'
+        + 'No featured runs yet. Mark runs as favorites in the admin page to '
+        + 'feature them here.</div>';
+      return;
+    }
+    renderList();
+  } catch (e) {
+    status.className = 'status err';
+    status.textContent = 'backend offline — ' + BACKEND.replace(/^https?:\/\//, '');
+    document.getElementById('listPanel').innerHTML =
+      '<div style="padding:16px;color:#94a3b8;font-size:0.82rem;line-height:1.6">'
+      + 'Could not reach the backend. The gallery reads featured runs live from the '
+      + 'simulation server, which must be running and reachable.</div>';
+  }
+}
+
+function renderList() {
+  const panel = document.getElementById('listPanel');
+  panel.innerHTML = '';
+  _rows.forEach((r) => {
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.dataset.id = r.run_id;
+    row.dataset.search = ((r.prompt || '') + ' ' + (r.title || '') + ' ' + (r.mode || '')).toLowerCase();
+    row.innerHTML = `
+      <div class="r-top">
+        <span class="mode-badge mode-${r.mode}">${r.mode || '—'}</span>
+        <span class="ok-dot ${okClass(r.looks_correct)}"></span>
+        <span class="r-prompt">${esc(r.prompt)}</span>
+      </div>
+      <div class="r-meta">${fmtTs(r.timestamp)} · v${esc(r.version)}</div>`;
+    row.onclick = () => selectRun(r, row);
+    panel.appendChild(row);
+  });
+}
+
+function applyFilter(q) {
+  q = (q || '').toLowerCase();
+  document.querySelectorAll('.list-panel .row').forEach((row) => {
+    row.classList.toggle('hidden', q && !row.dataset.search.includes(q));
+  });
+}
+
+function toggleWide() {
+  const lp = document.getElementById('listPanel');
+  const btn = document.getElementById('wideBtn');
+  const on = lp.classList.toggle('collapsed');
+  btn.classList.toggle('on', on);
+  setTimeout(() => window.dispatchEvent(new Event('resize')), 180);
+}
+
+// ── Load + render an individual case (updates the persistent viewer) ──────────
+async function selectRun(r, rowEl) {
+  document.querySelectorAll('.list-panel .row').forEach((x) => x.classList.remove('active'));
+  rowEl.classList.add('active');
+  _activeId = r.run_id;
+
+  document.getElementById('emptyMsg').style.display = 'none';
+  document.getElementById('viewer').style.display = 'flex';
+  const head = document.getElementById('d-head');
+  const host = document.getElementById('plot-host');
+  if (_figHandle) { try { _figHandle.destroy(); } catch (e) {} _figHandle = null; }
+  head.innerHTML = '<div class="loading">Loading…</div>';
+  host.innerHTML = '';
+  document.getElementById('avatar-section').style.display = 'none';
+  document.getElementById('json-block').style.display = 'none';
+
+  try {
+    const resp = await fetch(`${BACKEND}/run/${r.run_id}/data`);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    if (_activeId !== r.run_id) return;   // a newer click won
+
+    const badge = `<span class="mode-badge mode-${data.mode}">${data.mode || '—'}</span>`;
+    const tm = data.timing
+      ? ` · ⏱ ${(data.timing.total_ms/1000).toFixed(1)}s (LLM ${(data.timing.llm_ms/1000).toFixed(1)}s · sim ${(data.timing.sim_ms/1000).toFixed(1)}s)`
+      : '';
+    const narrative = data.narrative || (data.detail && data.detail.narrative) || '';
+    head.innerHTML =
+      `<div class="d-title">${badge} ${esc(data.title || data.prompt)}</div>` +
+      `<div class="d-prompt" style="margin-top:6px"><strong>Prompt:</strong> ${esc(data.prompt)}</div>` +
+      (narrative ? `<div class="d-narrative" style="margin-top:8px">${esc(narrative)}</div>` : '') +
+      (data.note ? `<div class="d-narrative" style="margin-top:8px"><strong>Note:</strong> ${esc(data.note)}</div>` : '') +
+      `<div class="d-meta" style="margin-top:6px">${fmtTs(data.timestamp)} · v${esc(data.version)}${tm}` +
+      (data.feedback ? ` · <em>${esc(data.feedback)}</em>` : '') + `</div>`;
+
+    // 3D avatar + playback (shared avatar.js)
+    loadAvatar(data);
+
+    // Interactive plots
+    if (data.plot_spec && window.PlotSpec && typeof uPlot !== 'undefined') {
+      _figHandle = window.PlotSpec.render(host, data.plot_spec);
+    } else {
+      host.innerHTML = '<div class="loading" style="padding:12px">No interactive data for this run.</div>';
+    }
+
+    // Full structured LLM output
+    if (data.detail) {
+      document.getElementById('d-json').textContent = JSON.stringify(data.detail, null, 2);
+      document.getElementById('json-block').style.display = '';
+    }
+  } catch (e) {
+    head.innerHTML = '<div class="empty">Failed to load this run (' + esc(e.message) + ').</div>';
+  }
+}
+
+// Load the per-eye trajectory into the shared 3D avatar (tabs for comparisons).
+function loadAvatar(data) {
+  const section = document.getElementById('avatar-section');
+  const tabs = document.getElementById('avatar-tabs');
+  if (!window.loadEyeTrajectory) { section.style.display = 'none'; return; }
+
+  if (data.eye_trajectories && data.eye_trajectories.length) {
+    section.style.display = 'block';
+    tabs.style.display = 'flex'; tabs.innerHTML = '';
+    data.eye_trajectories.forEach((traj, i) => {
+      const b = document.createElement('button');
+      b.className = 'avatar-tab' + (i === 0 ? ' active' : '');
+      b.textContent = traj.label || ('Scenario ' + (i + 1));
+      b.onclick = () => {
+        tabs.querySelectorAll('.avatar-tab').forEach((x) => x.classList.remove('active'));
+        b.classList.add('active');
+        window.loadEyeTrajectory(traj);
+      };
+      tabs.appendChild(b);
+    });
+    window.loadEyeTrajectory(data.eye_trajectories[0]);
+  } else if (data.eye_trajectory) {
+    section.style.display = 'block';
+    tabs.style.display = 'none'; tabs.innerHTML = '';
+    window.loadEyeTrajectory(data.eye_trajectory);
+  } else {
+    section.style.display = 'none';
+  }
+}
+
+// Playback delegates (avatar.js exposes the implementations on window).
+function togglePlay() { if (window._avatarTogglePlay) window._avatarTogglePlay(); }
+function onScrub(v)   { if (window._avatarOnScrub)    window._avatarOnScrub(parseInt(v)); }
+
+// Drive the plot time-cursor from the 3D playback clock.
+window.setPlotTime = function (t) {
+  if (_figHandle && _figHandle.setTime) { try { _figHandle.setTime(t); } catch (e) {} }
+};
+
+loadIndex();
+</script>
+</body>
+</html>

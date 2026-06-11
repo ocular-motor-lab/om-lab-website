@@ -176,6 +176,9 @@ function getBackend() {
     : 'https://giggling-confused-thriving.ngrok-free.dev';
 }
 const BACKEND = getBackend();
+// ngrok's free tier injects an HTML interstitial on browser GET requests; this
+// header tells it to skip that and proxy straight through to the backend.
+const NGROK_HDR = { 'ngrok-skip-browser-warning': 'true' };
 
 let _rows = [];
 let _figHandle = null;
@@ -200,7 +203,7 @@ async function loadIndex() {
   const status = document.getElementById('status');
   try {
     // Public gallery shows only curated favorites.
-    const resp = await fetch(BACKEND + '/runs?favorites_only=true');
+    const resp = await fetch(BACKEND + '/runs?favorites_only=true', { headers: NGROK_HDR });
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     _rows = await resp.json();
     status.className = 'status';
@@ -275,7 +278,7 @@ async function selectRun(r, rowEl) {
   document.getElementById('json-block').style.display = 'none';
 
   try {
-    const resp = await fetch(`${BACKEND}/run/${r.run_id}/data`);
+    const resp = await fetch(`${BACKEND}/run/${r.run_id}/data`, { headers: NGROK_HDR });
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const data = await resp.json();
     if (_activeId !== r.run_id) return;   // a newer click won

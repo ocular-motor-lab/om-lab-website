@@ -369,7 +369,7 @@ async function run() {
 
   try {
     const resp = await fetch(backend + '/run', {
-      method: 'POST', headers: {'Content-Type': 'application/json'},
+      method: 'POST', headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'},
       body: JSON.stringify({description: prompt}),
     });
     if (!resp.ok) { const e = await resp.json(); throw new Error(e.error || 'HTTP ' + resp.status); }
@@ -529,7 +529,7 @@ async function submitFeedback() {
   btn.disabled  = true;
   try {
     const resp = await fetch(backend + '/feedback', {
-      method: 'POST', headers: {'Content-Type': 'application/json'},
+      method: 'POST', headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'},
       body: JSON.stringify({
         run_id:        _currentRunId,
         looks_correct: (document.querySelector('input[name="looks-correct"]:checked') || {}).value || null,

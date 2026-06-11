@@ -217,7 +217,7 @@
     return wrap;
   }
 
-  function makeGanttPanel(panel, tmin, tmax) {
+  function makeGanttPanel(panel, tmin, tmax, registry) {
     const wrap = document.createElement('div');
     wrap.className = 'ps-panel';
     const label = document.createElement('div');
@@ -244,6 +244,12 @@
         if (w > 0.04) seg.textContent = state ? lane.on_label : lane.off_label;
         track.appendChild(seg);
       });
+      // Time cursor for this lane. The gantt uses a fixed full-time scale (it
+      // never zooms), so position is a simple fraction of [tmin, tmax].
+      const ph = document.createElement('div');
+      ph.className = 'ps-playhead';
+      track.appendChild(ph);
+      registry.addGanttPlayhead(ph, tmin, tmax);
       row.appendChild(lab);
       row.appendChild(track);
       wrap.appendChild(row);
@@ -256,12 +262,14 @@
     container.innerHTML = '';
 
     const charts = [];
-    const playheads = [];     // [{ u, ph }]
-    let playT = null;         // current playhead time (s), or null = hidden
+    const playheads = [];        // uPlot panels: [{ u, ph }]
+    const ganttPlayheads = [];   // gantt lanes: [{ ph, tmin, tmax }] (fixed scale)
+    let playT = null;            // current playhead time (s), or null = hidden
     let syncingGlobal = false;
     const registry = {
       add: (u) => charts.push(u),
       addPlayhead: (u, ph) => playheads.push({ u, ph }),
+      addGanttPlayhead: (ph, a, b) => ganttPlayheads.push({ ph, tmin: a, tmax: b }),
       reposition: () => {
         for (const { u, ph } of playheads) {
           if (playT == null) { ph.style.display = 'none'; continue; }
@@ -274,6 +282,13 @@
             ph.style.left = Math.max(0, Math.min(w, x)) + 'px';
             ph.style.display = 'block';
           }
+        }
+        // Gantt lanes: fixed full-time scale, so a simple clamped fraction.
+        for (const { ph, tmin, tmax } of ganttPlayheads) {
+          if (playT == null) { ph.style.display = 'none'; continue; }
+          const frac = (playT - tmin) / ((tmax - tmin) || 1);
+          ph.style.left = (Math.max(0, Math.min(1, frac)) * 100) + '%';
+          ph.style.display = 'block';
         }
       },
       setPlayT: (t) => {
@@ -315,7 +330,7 @@
     (spec.panels || []).forEach((panel) => {
       try {
         const el = (panel.type === 'gantt')
-          ? makeGanttPanel(panel, tmin, tmax)
+          ? makeGanttPanel(panel, tmin, tmax, registry)
           : makeLinePanel(panel, t, [tmin, tmax], registry);
         container.appendChild(el);
       } catch (e) {

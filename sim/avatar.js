@@ -51,17 +51,21 @@ let rightEyeBone = null;
 let headBone     = null;
 let restL = null, restR = null, restHead = null;
 let coverMeshL   = null, coverMeshR = null;
+let faceMesh     = null;   // skinned mesh carrying the ARKit morph targets (eyelids)
 
-const AVATAR_PATH = 'avatar/scene.gltf';
+const AVATAR_PATH = 'avatar/avatar.glb';
 
 new GLTFLoader().load(AVATAR_PATH, (gltf) => {
   const model = gltf.scene;
   scene.add(model);
 
   model.traverse(obj => {
-    if (obj.name === 'LeftEye_08')  leftEyeBone  = obj;
-    if (obj.name === 'RightEye_09') rightEyeBone = obj;
+    if (obj.name === 'LeftEye'  || obj.name === 'LeftEye_08')  leftEyeBone  = obj;
+    if (obj.name === 'RightEye' || obj.name === 'RightEye_09') rightEyeBone = obj;
+    // First skinned/standard mesh that carries ARKit blendshapes = the face.
+    if (obj.isMesh && obj.morphTargetDictionary && !faceMesh) faceMesh = obj;
   });
+  console.log('Face morph targets:', faceMesh ? Object.keys(faceMesh.morphTargetDictionary).length : 0);
 
   // Rotate the whole model for head/body movement — avoids neck artifacts
   headBone = model;
@@ -158,6 +162,30 @@ new GLTFLoader().load(AVATAR_PATH, (gltf) => {
   document.getElementById('avatar-loading').textContent = 'Avatar failed to load';
 });
 
+// ── Eyelids (ARKit blendshapes) ────────────────────────────────────────────────
+function setMorph(name, value) {
+  if (!faceMesh) return;
+  const i = faceMesh.morphTargetDictionary[name];
+  if (i !== undefined) faceMesh.morphTargetInfluences[i] = value;
+}
+
+// Spontaneous blink: a short 0->1->0 close every few seconds (real-time clock,
+// so the avatar looks alive even when paused). Advanced from animate(ts).
+let _blink = 0;
+let _nextBlinkTs = 0;
+function updateBlink(ts) {
+  if (_nextBlinkTs === 0) { _nextBlinkTs = ts + 2000 + Math.random() * 3500; return; }
+  const since = ts - _nextBlinkTs;      // >= 0 once the blink has started
+  const DUR = 150;                      // ms
+  if (since >= 0 && since <= DUR) {
+    const ph = since / DUR;
+    _blink = ph < 0.5 ? ph * 2 : (1 - ph) * 2;   // triangle 0->1->0
+  } else if (since > DUR) {
+    _blink = 0;
+    _nextBlinkTs = ts + 2000 + Math.random() * 3500;
+  }
+}
+
 // ── Bone application ──────────────────────────────────────────────────────────
 const DEG = Math.PI / 180;
 
@@ -192,6 +220,18 @@ function applyFrame(fi) {
   // Cover patches
   if (coverMeshL) coverMeshL.visible = !!(_traj.cover_L && _traj.cover_L[fi]);
   if (coverMeshR) coverMeshR.visible = !!(_traj.cover_R && _traj.cover_R[fi]);
+
+  // Eyelids: spontaneous blink + upper lid follows vertical gaze (downgaze
+  // lowers the lid via eyeBlink; upgaze retracts it via eyeWide). L/R = [yaw,
+  // pitch, roll] deg; pitch > 0 = up.
+  if (faceMesh) {
+    const downL = Math.max(0, -L[1]) / 40, upL = Math.max(0, L[1]) / 45;
+    const downR = Math.max(0, -R[1]) / 40, upR = Math.max(0, R[1]) / 45;
+    setMorph('eyeBlinkLeft',  Math.min(1, Math.max(_blink, downL * 0.6)));
+    setMorph('eyeBlinkRight', Math.min(1, Math.max(_blink, downR * 0.6)));
+    setMorph('eyeWideLeft',  Math.min(0.5, upL) * (1 - _blink));
+    setMorph('eyeWideRight', Math.min(0.5, upR) * (1 - _blink));
+  }
 }
 
 // ── Playback ──────────────────────────────────────────────────────────────────
@@ -305,6 +345,7 @@ function renderViewports() {
 
 function animate(ts) {
   requestAnimationFrame(animate);
+  updateBlink(ts);   // spontaneous blink (eyelids), independent of playback
 
   if (_playing && _traj) {
     if (_lastRafTs !== null) {

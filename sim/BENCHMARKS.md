@@ -2,13 +2,13 @@
 
 Each section lists the expected behaviors and numerical targets.
 Literature citations give the primary source for each criterion.
-Scripts in `docs/` produce two figure types per section:
+Scripts in `web/` produce two figure types per section:
 - **behavior** — stimulus + eye output only (paper-style replication)
 - **cascade** — internal signal chain (debugging / mechanistic)
 
 ---
 
-## 1. Saccades (`docs/saccades.py`)
+## 1. Saccades (`web/saccades.py`)
 
 ### 1a. Main Sequence
 **Expected:**
@@ -48,7 +48,7 @@ Scripts in `docs/` produce two figure types per section:
 
 ---
 
-## 2. VOR / OKR (`docs/vor_okr.py`)
+## 2. VOR / OKR (`web/vor_okr.py`)
 
 ### 2a. Raphan Fig. 9 Replication
 Three conditions with 30 deg/s stimulus, each 30 s on + 50 s coast/dark.
@@ -92,7 +92,7 @@ fast phases resetting to near-center periodically.
 
 ---
 
-## 3. Tilt / Translation (`docs/tilt_translation.py`)
+## 3. Tilt / Translation (`web/tilt_translation.py`)
 
 ### 3a. OVAR (Off-Vertical Axis Rotation) — *placeholder*
 **Expected:** During rotation around a tilted axis, otolith drives periodic modulation
@@ -107,7 +107,7 @@ counterroll per degree of tilt). Requires gravity estimator + otolith model work
 
 ---
 
-## 4. Smooth Pursuit (`docs/pursuit.py`)
+## 4. Smooth Pursuit (`web/pursuit.py`)
 
 ### 4a. Velocity Range (step-ramp)
 **Expected:**
@@ -131,7 +131,7 @@ efference copy cancels saccadic contamination of retinal velocity signal
 
 ---
 
-## 5. Vergence (`docs/vergence.py`)
+## 5. Vergence (`web/vergence.py`)
 
 ### 5a. Symmetric Vergence — *placeholder*
 **Expected:** Both eyes converge symmetrically on a near target (< 40 cm).
@@ -145,7 +145,7 @@ Version component (conjugate) separates from vergence component.
 
 ---
 
-## 6. Fixation (`docs/fixation.py`)
+## 6. Fixation (`web/fixation.py`)
 
 ### 6a. Noise Source Comparison
 **Expected:**

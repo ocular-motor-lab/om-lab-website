@@ -49,40 +49,6 @@
     transition: all 0.15s;
   }
   .example-chip:hover { border-color: #2563eb; color: #1c2230; background: #e4ecff; }
-  /* Featured example cards (curated; click → instant output) */
-  .featured-grid { margin-top: 16px; display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
-  .featured-card { border: 1px solid #d3d7e0; border-radius: 10px; overflow: hidden;
-    cursor: pointer; background: #fff; transition: all .15s; }
-  .featured-card:hover { border-color: #2563eb; box-shadow: 0 2px 10px rgba(37,99,235,.15);
-    transform: translateY(-1px); }
-  .featured-card img { width: 100%; height: 88px; object-fit: cover; display: block; background: #f5f5f5; }
-  .featured-card .ftitle { font-size: .73rem; color: #1c2230; padding: 6px 8px; line-height: 1.25; }
-  .see-more { margin-top: 10px; }
-  .see-more a { font-size: .8rem; color: #2563eb; cursor: pointer; }
-  .see-more a:hover { text-decoration: underline; }
-  /* Gallery drawer ("see more") */
-  .drawer-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 40; }
-  .drawer { position: fixed; top: 0; right: 0; height: 100vh; width: 380px; max-width: 90vw;
-    background: #fff; box-shadow: -4px 0 24px rgba(0,0,0,.18); z-index: 50;
-    transform: translateX(100%); transition: transform .22s ease; display: flex; flex-direction: column; }
-  .drawer.open { transform: translateX(0); }
-  .drawer-head { display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 16px; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #1a1a2e; }
-  .drawer-close { background: none; border: none; font-size: 18px; cursor: pointer;
-    color: #64748b; padding: 0; width: auto; }
-  .drawer-body { padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-  .drawer-loading { color: #64748b; font-size: .85rem; padding: 20px; text-align: center; }
-  /* Drawer rows: thumbnail + title (title-forward, unlike the image-first featured cards) */
-  .drawer-card { display: flex; gap: 10px; align-items: center; border: 1px solid #e5e7eb;
-    border-radius: 8px; padding: 6px; cursor: pointer; background: #fff; transition: all .12s; }
-  .drawer-card:hover { border-color: #2563eb; background: #f3f7ff; }
-  .drawer-card img { width: 76px; height: 50px; object-fit: cover; border-radius: 4px;
-    flex-shrink: 0; background: #f5f5f5; }
-  .drawer-card .dc-title { font-size: .82rem; color: #1c2230; line-height: 1.3; }
-  .drawer-card .dc-badge { display: inline-block; font-size: .62rem; font-weight: 600;
-    color: #1d4ed8; background: #e4ecff; border-radius: 10px; padding: 1px 7px; margin-top: 4px;
-    text-transform: uppercase; letter-spacing: .03em; }
   .status { margin-top: 18px; font-size: 0.85rem; color: #64748b; min-height: 1.2em; }
   .status.error { color: #dc2626; }
   .mode-badge {
@@ -259,14 +225,7 @@
     <button id="btn" onclick="run()">Run</button>
   </div>
 
-  <!-- Featured examples (curated, from the gallery) — click a card to see its output instantly. -->
-  <div class="featured-grid" id="featured-grid" style="display:none;"></div>
-  <div class="see-more" id="see-more" style="display:none;">
-    <a onclick="openGallery()">See more examples →</a>
-  </div>
-
-  <!-- Fallback: static prompt chips, shown only if no featured runs / backend offline. -->
-  <div class="examples" id="examples-fallback" style="display:none;">
+  <div class="examples">
     <span class="example-chip" onclick="set('Healthy 20° saccade to the right')">Healthy 20° saccade</span>
     <span class="example-chip" onclick="set('Left vestibular neuritis doing a head impulse test to the right')">Left neuritis HIT</span>
     <span class="example-chip" onclick="set('OKN: 30 deg/s full-field scene motion for 20 s, then OKAN')">OKN + OKAN</span>
@@ -416,7 +375,66 @@ async function run() {
     if (!resp.ok) { const e = await resp.json(); throw new Error(e.error || 'HTTP ' + resp.status); }
     const data = await resp.json();
 
-    showResult(data);
+    _currentRunId = data.run_id;
+    _currentMode  = data.mode;
+
+    document.getElementById('plot').src = 'data:image/png;base64,' + data.image_b64;
+    // PNG available but hidden by default — expose the toggle, reset to hidden.
+    document.getElementById('png-toggle-wrap').style.display = 'block';
+    document.getElementById('png-figure').style.display = 'none';
+    document.getElementById('png-toggle').textContent = 'Show static figure (PNG)';
+    document.getElementById('json-out').textContent = JSON.stringify(data.detail_json, null, 2);
+    result.style.display = 'block';
+
+    // Interactive, zoomable plots (uPlot) from the spec; PNG kept as a toggle.
+    // Guarded so a plotting hiccup can never block the avatar/feedback below.
+    try { renderInteractivePlot(data.plot_spec); }
+    catch (e) { console.error('renderInteractivePlot threw', e); }
+
+    const badge = data.mode === 'comparison'
+      ? '<span class="mode-badge mode-comparison">comparison</span>'
+      : '<span class="mode-badge mode-single">single</span>';
+    const vtag = '<span class="version-tag">v' + data.version + '</span>';
+    const desc = (data.detail_json && data.detail_json.narrative)
+      ? data.detail_json.narrative : data.title;
+    status.innerHTML = badge + desc + vtag;
+
+    document.getElementById('feedback-section').style.display = 'block';
+    document.getElementById('download-btn').style.display =
+      (data.mode === 'single') ? 'inline-block' : 'none';
+
+    // Load eye trajectory into 3D avatar
+    const avatarTabs = document.getElementById('avatar-tabs');
+    if (data.eye_trajectories && data.eye_trajectories.length > 0
+        && typeof window.loadEyeTrajectory === 'function') {
+      // Comparison mode: tabs to switch between scenarios
+      document.getElementById('avatar-section').style.display = 'block';
+      avatarTabs.innerHTML = '';
+      avatarTabs.style.display = 'flex';
+      data.eye_trajectories.forEach((traj, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'avatar-tab' + (i === 0 ? ' active' : '');
+        btn.textContent = traj.label || `Scenario ${i + 1}`;
+        btn.onclick = () => {
+          avatarTabs.querySelectorAll('.avatar-tab').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          window.loadEyeTrajectory(traj);
+          renderPatientChanges(traj.patient_changes || []);
+        };
+        avatarTabs.appendChild(btn);
+      });
+      window.loadEyeTrajectory(data.eye_trajectories[0]);
+      renderPatientChanges(data.eye_trajectories[0].patient_changes || []);
+    } else if (data.eye_trajectory && typeof window.loadEyeTrajectory === 'function') {
+      // Single mode: no tabs
+      avatarTabs.innerHTML = '';
+      avatarTabs.style.display = 'none';
+      document.getElementById('avatar-section').style.display = 'block';
+      window.loadEyeTrajectory(data.eye_trajectory);
+      renderPatientChanges(data.patient_changes || []);
+    } else {
+      renderPatientChanges(data.patient_changes || []);
+    }
 
   } catch(e) {
     status.className = 'status error';
@@ -427,172 +445,6 @@ async function run() {
   } finally { btn.disabled = false; }
 }
 
-
-// Render a result object into the result area. Works for a live /run response
-// (has image_b64 + detail_json) AND a saved run sidecar from /run/{id}/data
-// (has figure_rel + detail + narrative) — so featured examples reuse this path.
-function showResult(data) {
-  const backend = getBackend();
-  const status  = document.getElementById('status');
-  const result  = document.getElementById('result');
-  _currentRunId = data.run_id;
-  _currentMode  = data.mode;
-
-  // PNG: base64 from a live run, else the stored figure for a saved/featured run.
-  const png = document.getElementById('plot');
-  if (data.image_b64)        png.src = 'data:image/png;base64,' + data.image_b64;
-  else if (data.figure_rel)  png.src = backend + '/outputs/' + data.figure_rel;
-  else if (data.run_id)      png.src = backend + '/outputs/server_figures/' + data.run_id + '.png';
-  document.getElementById('png-toggle-wrap').style.display = 'block';
-  document.getElementById('png-figure').style.display = 'none';
-  document.getElementById('png-toggle').textContent = 'Show static figure (PNG)';
-  const detail = data.detail_json || data.detail || {};
-  document.getElementById('json-out').textContent = JSON.stringify(detail, null, 2);
-  result.style.display = 'block';
-
-  try { renderInteractivePlot(data.plot_spec); }
-  catch (e) { console.error('renderInteractivePlot threw', e); }
-
-  const badge = data.mode === 'comparison'
-    ? '<span class="mode-badge mode-comparison">comparison</span>'
-    : '<span class="mode-badge mode-single">single</span>';
-  const vtag = data.version ? '<span class="version-tag">v' + data.version + '</span>' : '';
-  const desc = (detail && detail.narrative) ? detail.narrative : (data.narrative || data.title || '');
-  status.className = 'status';
-  status.innerHTML = badge + desc + vtag;
-
-  document.getElementById('feedback-section').style.display = 'block';
-  document.getElementById('download-btn').style.display =
-    (data.mode === 'single') ? 'inline-block' : 'none';
-
-  // Load eye trajectory into 3D avatar
-  const avatarTabs = document.getElementById('avatar-tabs');
-  if (data.eye_trajectories && data.eye_trajectories.length > 0
-      && typeof window.loadEyeTrajectory === 'function') {
-    document.getElementById('avatar-section').style.display = 'block';
-    avatarTabs.innerHTML = '';
-    avatarTabs.style.display = 'flex';
-    data.eye_trajectories.forEach((traj, i) => {
-      const btn = document.createElement('button');
-      btn.className = 'avatar-tab' + (i === 0 ? ' active' : '');
-      btn.textContent = traj.label || `Scenario ${i + 1}`;
-      btn.onclick = () => {
-        avatarTabs.querySelectorAll('.avatar-tab').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        window.loadEyeTrajectory(traj);
-        renderPatientChanges(traj.patient_changes || []);
-      };
-      avatarTabs.appendChild(btn);
-    });
-    window.loadEyeTrajectory(data.eye_trajectories[0]);
-    renderPatientChanges(data.eye_trajectories[0].patient_changes || []);
-  } else if (data.eye_trajectory && typeof window.loadEyeTrajectory === 'function') {
-    avatarTabs.innerHTML = '';
-    avatarTabs.style.display = 'none';
-    document.getElementById('avatar-section').style.display = 'block';
-    window.loadEyeTrajectory(data.eye_trajectory);
-    renderPatientChanges(data.patient_changes || []);
-  } else {
-    renderPatientChanges(data.patient_changes || []);
-  }
-}
-
-// ── Featured examples + gallery drawer ────────────────────────────────────────
-// Click a featured/gallery card → load its STORED result instantly (no LLM, no sim),
-// and prefill the prompt so the user can tweak + re-run.
-async function loadFeatured(runId, prompt) {
-  const backend = getBackend();
-  const status  = document.getElementById('status');
-  if (prompt) set(prompt);
-  document.getElementById('result').style.display = 'none';
-  status.className = 'status';
-  status.innerHTML = '<span class="spinner"></span>Loading example…';
-  try {
-    const resp = await fetch(backend + '/run/' + runId + '/data',
-                             { headers: { 'ngrok-skip-browser-warning': 'true' } });
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    showResult(await resp.json());
-    document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  } catch (e) {
-    status.className = 'status error';
-    status.textContent = 'Could not load example: ' + e.message;
-  }
-}
-
-function _exampleCard(r) {
-  const backend = getBackend();
-  const div = document.createElement('div');
-  div.className = 'featured-card';
-  div.title = r.prompt || '';
-  const img = backend + '/outputs/server_figures/' + r.run_id + '.png';
-  const label = (r.title || r.prompt || 'Example').replace(/&/g, '&amp;').replace(/</g, '&lt;');
-  div.innerHTML = `<img loading="lazy" src="${img}" alt="" onerror="this.style.display='none'">`
-                + `<div class="ftitle">${label}</div>`;
-  div.onclick = () => loadFeatured(r.run_id, r.prompt);
-  return div;
-}
-
-// Drawer rows are title-forward: a small thumbnail beside the title + mode badge,
-// so the gallery reads as a scannable list rather than image tiles.
-function _drawerRow(r) {
-  const backend = getBackend();
-  const div = document.createElement('div');
-  div.className = 'drawer-card';
-  div.title = r.prompt || '';
-  const img = backend + '/outputs/server_figures/' + r.run_id + '.png';
-  const label = (r.title || r.prompt || 'Example').replace(/&/g, '&amp;').replace(/</g, '&lt;');
-  const badge = r.mode === 'comparison' ? '<span class="dc-badge">comparison</span>' : '';
-  div.innerHTML = `<img loading="lazy" src="${img}" alt="" onerror="this.style.display='none'">`
-                + `<div><div class="dc-title">${label}</div>${badge}</div>`;
-  div.onclick = () => { closeGallery(); loadFeatured(r.run_id, r.prompt); };
-  return div;
-}
-
-async function loadFeaturedExamples() {
-  const backend  = getBackend();
-  const grid     = document.getElementById('featured-grid');
-  const fallback = document.getElementById('examples-fallback');
-  const seeMore  = document.getElementById('see-more');
-  try {
-    const resp = await fetch(backend + '/runs?featured_only=true',
-                             { headers: { 'ngrok-skip-browser-warning': 'true' } });
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    const runs = await resp.json();
-    if (!runs.length) { fallback.style.display = 'flex'; return; }
-    grid.innerHTML = '';
-    runs.forEach(r => grid.appendChild(_exampleCard(r)));
-    grid.style.display = 'grid';
-    seeMore.style.display = 'block';
-  } catch (e) {
-    // Backend unreachable → fall back to the static prompt chips.
-    fallback.style.display = 'flex';
-  }
-}
-
-async function openGallery() {
-  const backend = getBackend();
-  document.getElementById('drawer-overlay').style.display = 'block';
-  document.getElementById('gallery-drawer').classList.add('open');
-  const body = document.getElementById('drawer-body');
-  body.innerHTML = '<div class="drawer-loading">Loading…</div>';
-  try {
-    const resp = await fetch(backend + '/runs?favorites_only=true',
-                             { headers: { 'ngrok-skip-browser-warning': 'true' } });
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    const runs = await resp.json();
-    if (!runs.length) { body.innerHTML = '<div class="drawer-loading">No gallery runs yet.</div>'; return; }
-    body.innerHTML = '';
-    runs.forEach(r => body.appendChild(_drawerRow(r)));
-  } catch (e) {
-    body.innerHTML = '<div class="drawer-loading">Could not reach the backend.</div>';
-  }
-}
-function closeGallery() {
-  document.getElementById('gallery-drawer').classList.remove('open');
-  document.getElementById('drawer-overlay').style.display = 'none';
-}
-
-document.addEventListener('DOMContentLoaded', loadFeaturedExamples);
 
 // ── Interactive plot (uPlot) with PNG toggle ──────────────────────────────────
 let _figHandle = null;
@@ -731,22 +583,12 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 <script type="module" src="avatar.js"></script>
 
-<!-- ── Gallery drawer ("see more") ──────────────────────────────────────────── -->
-<div class="drawer-overlay" id="drawer-overlay" onclick="closeGallery()"></div>
-<aside class="drawer" id="gallery-drawer" aria-label="Example gallery">
-  <div class="drawer-head">
-    <span>Gallery</span>
-    <button class="drawer-close" onclick="closeGallery()" title="Close">✕</button>
-  </div>
-  <div class="drawer-body" id="drawer-body"></div>
-</aside>
-
 <div class="site-footer">
   <a href="gallery.html">Gallery</a>
   <span class="sep">·</span>
-  <a href="benchmarks">Benchmarks</a>
+  <a href="benchmarks/">Benchmarks</a>
   <span class="sep">·</span>
-  <a href="clinical_benchmarks">Clinical Benchmarks</a>
+  <a href="clinical_benchmarks/">Clinical Benchmarks</a>
   <span class="sep">·</span>
   <a href="parameters.html">Parameters</a>
   <span class="sep">·</span>

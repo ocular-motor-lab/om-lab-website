@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ViSiOMlab</title>
+<link rel="icon" type="image/png" href="assets/favicon.png">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -13,6 +14,8 @@
     align-items: center; padding: 32px 24px;
   }
   h1 { font-size: 1.7rem; font-weight: 600; margin-bottom: 6px; color: #0f172a; }
+  h1.brand { line-height: 0; margin-bottom: 8px; }
+  h1.brand img { height: 87px; width: auto; display: block; }
   .subtitle { font-size: 0.88rem; color: #64748b; margin-bottom: 28px;
               max-width: 620px; line-height: 1.55; }
   .card {
@@ -120,6 +123,9 @@
   .fig-btn:disabled { opacity: 0.4; cursor: not-allowed; }
   .plot-host { width: 100%; background: #fff; border: 1px solid #e3e6ec;
                border-radius: 8px; padding: 6px 4px; margin-top: 10px; }
+  .plot-key { font-size: 0.72rem; color: #94a3b8; line-height: 1.55;
+              margin-top: 8px; max-width: 760px; }
+  .plot-key a { color: #64748b; }
   .plot-host .u-legend { color: #475569; }
 
   details { margin-top: 16px; border: 1px solid #e3e6ec; border-radius: 8px; overflow: hidden; }
@@ -224,7 +230,7 @@
   }
   /* Divider line between the two viewports — hidden in single-head mode */
   .avatar-wrap::after {
-    content: ''; position: absolute; top: 0; bottom: 0; left: 50%;
+    content: ''; position: absolute; top: 0; bottom: 0; left: 70%;
     width: 1px; background: #d3d7e0; pointer-events: none;
   }
   .avatar-wrap.single-view::after { display: none; }
@@ -287,9 +293,10 @@
 </head>
 <body>
 
-<h1>ViSiOMlab</h1>
-<p class="subtitle">A <strong>Vi</strong>rtual <strong>Si</strong>mulator from the <strong>O</strong>cular
-  <strong>M</strong>otor <strong>lab</strong> — a biophysically grounded model of how the brain
+<h1 class="brand"><img src="assets/visiomlab-logo.svg" alt="ViSiOMlab"></h1>
+<p class="subtitle">A <strong>Vi</strong>rtual <strong>Si</strong>mulator from the
+  <a href="https://omlab.berkeley.edu/" target="_blank" rel="noopener"><strong>O</strong>cular
+  <strong>M</strong>otor <strong>lab</strong></a> — a biophysically grounded model of how the brain
   controls eye movements. Describe a patient, a clinical test, or a head- and target-motion scenario
   in plain English and see the predicted eye movements, or compare two side by side.</p>
 
@@ -329,8 +336,8 @@
         <canvas id="avatar-canvas"></canvas>
         <span id="avatar-loading">Loading avatar…</span>
         <div class="avatar-labels">
-          <span>World view</span>
-          <span>Head-fixed</span>
+          <span style="flex:7">Head view</span>
+          <span style="flex:3">World view</span>
         </div>
       </div>
       <div id="playback-bar">
@@ -343,6 +350,16 @@
 
     <!-- Interactive plots (uPlot) — primary view -->
     <div class="plot-host" id="plot-host" style="display:none;margin-top:20px;"></div>
+    <div class="plot-key" id="plot-key" style="display:none;">
+      Each panel lists its traces in the legend above it. Line conventions:
+      <b>solid</b> = horizontal (yaw), <b>dashed</b> = vertical (pitch),
+      <b>dotted</b> = torsion or target. In the eye-position panel,
+      <span style="color:#2166ac;font-weight:600">blue</span> = left eye and
+      <span style="color:#d6604d;font-weight:600">red</span> = right eye.
+      Gray bands mark dark periods (scene off); the dashed line at 0 is the reference.
+      Full state definitions are on the
+      <a href="states.html" target="_blank">states &amp; activations</a> page.
+    </div>
 
     <!-- Patient parameter changes — populated from RunResponse.patient_changes -->
     <div id="patient-changes-section" style="display:none;margin-top:18px;">
@@ -555,7 +572,7 @@ async function loadFeatured(runId, prompt) {
     const data = await resp.json();
     if (!prompt && data.prompt) set(data.prompt);   // deep-link path: prefill from the stored prompt
     showResult(data);
-    document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // (no auto-scroll — keep the viewport where it is when loading an example)
   } catch (e) {
     status.className = 'status error';
     status.textContent = 'Could not load example: ' + e.message;
@@ -684,17 +701,20 @@ let _figHandle = null;
 
 function renderInteractivePlot(spec) {
   const host = document.getElementById('plot-host');
+  const key  = document.getElementById('plot-key');
   if (_figHandle) { try { _figHandle.destroy(); } catch (e) {} _figHandle = null; }
 
   const canInteractive = spec && (typeof uPlot !== 'undefined') && window.PlotSpec;
-  if (!canInteractive) { host.style.display = 'none'; return; }   // PNG below remains
+  if (!canInteractive) { host.style.display = 'none'; if (key) key.style.display = 'none'; return; }
 
   host.style.display = 'block';                    // visible before render → correct width
   try {
     _figHandle = window.PlotSpec.render(host, spec);
+    if (key) key.style.display = 'block';
   } catch (e) {
-    console.error('Interactive plot failed; the static figure below remains.', e);
+    console.error('Interactive plot failed.', e);
     host.style.display = 'none';
+    if (key) key.style.display = 'none';
   }
 }
 
@@ -896,6 +916,8 @@ document.addEventListener('DOMContentLoaded', () => {
   <a href="parameters.html">Parameters</a>
   <span class="sep">·</span>
   <a href="states.html">States &amp; activations</a>
+  <span class="sep">·</span>
+  <a href="about.html">About</a>
 </div>
 
 </body>

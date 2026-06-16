@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ViSiOMlab — About</title>
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f4f5f7; color: #1c2230;
+    min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; padding: 32px 24px;
+  }
+  .brand { line-height: 0; margin-bottom: 18px; }
+  .brand img { height: 72px; width: auto; display: block; }
+  .card {
+    background: #fff; border: 1px solid #e3e6ec; border-radius: 12px;
+    padding: 30px 34px; width: 100%; max-width: 720px;
+  }
+  h2 { font-size: 1.15rem; color: #0f172a; margin: 22px 0 8px; }
+  h2:first-child { margin-top: 0; }
+  p { font-size: 0.92rem; line-height: 1.65; color: #334155; margin-bottom: 12px; }
+  a { color: #2563eb; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  ul { margin: 4px 0 12px 20px; }
+  li { font-size: 0.92rem; line-height: 1.6; color: #334155; margin-bottom: 5px; }
+  .note { font-size: 0.82rem; color: #64748b; background: #f8fafc;
+          border: 1px solid #e3e6ec; border-radius: 8px; padding: 12px 14px; margin-top: 18px; }
+  .site-footer {
+    margin-top: 36px; margin-bottom: 16px; font-size: 0.75rem; color: #94a3b8;
+    display: flex; gap: 20px; align-items: center; flex-wrap: wrap;
+  }
+  .site-footer a { color: #64748b; text-decoration: none; }
+  .site-footer a:hover { color: #2563eb; }
+  .site-footer .sep { color: #cbd5e1; }
+</style>
+</head>
+<body>
+
+<a class="brand" href="index.html"><img src="assets/visiomlab-logo.svg" alt="ViSiOMlab"></a>
+
+<div class="card">
+  <h2>What is ViSiOMlab?</h2>
+  <p>
+    <strong>ViSiOMlab</strong> — a <strong>Vi</strong>rtual <strong>Si</strong>mulator from the
+    <a href="https://omlab.berkeley.edu/" target="_blank" rel="noopener">Ocular Motor lab</a>
+    at UC&nbsp;Berkeley — is a biophysically grounded computational model of how the brain controls
+    eye movements. It simulates the full oculomotor pathway (semicircular canals, velocity storage,
+    the neural integrator, saccades, smooth pursuit, vergence, and the eye plant) and renders the
+    predicted eye movements as interactive plots and a 3-D avatar.
+  </p>
+
+  <h2>What you can do</h2>
+  <ul>
+    <li>Describe a scenario in plain English — a patient, a clinical test, or a head- and
+        target-motion sequence — and see the predicted eye movements.</li>
+    <li>Model disorders by adjusting physiological parameters (e.g. vestibular, cerebellar,
+        nerve/nucleus palsies) and watch how the eye movements change.</li>
+    <li>Compare two scenarios side by side.</li>
+    <li>Inspect the model's
+        <a href="parameters.html">parameters</a> and
+        <a href="states.html">states &amp; activations</a>, and browse validation
+        <a href="benchmarks">benchmarks</a> and a <a href="gallery.html">gallery</a> of examples.</li>
+  </ul>
+
+  <h2>How it works</h2>
+  <p>
+    The model is a differentiable state-space simulation built in JAX: each subsystem is a small
+    dynamical model wired together in the signal-flow order of the real oculomotor system. A
+    plain-English description is turned into a stimulus and parameter set, the dynamics are
+    integrated, and the resulting eye, head, target, and scene signals are drawn as zoomable,
+    cursor-synced plots alongside a head-fixed and world view of an avatar.
+  </p>
+
+  <div class="note">
+    ViSiOMlab is a research and educational tool. It is a model of oculomotor physiology, not a
+    medical device, and is not intended for clinical diagnosis or treatment.
+  </div>
+</div>
+
+<div class="site-footer">
+  <a href="index.html">Home</a>
+  <span class="sep">·</span>
+  <a href="gallery.html">Gallery</a>
+  <span class="sep">·</span>
+  <a href="benchmarks">Benchmarks</a>
+  <span class="sep">·</span>
+  <a href="clinical_benchmarks">Clinical Benchmarks</a>
+  <span class="sep">·</span>
+  <a href="parameters.html">Parameters</a>
+  <span class="sep">·</span>
+  <a href="states.html">States &amp; activations</a>
+</div>
+
+</body>
+</html>

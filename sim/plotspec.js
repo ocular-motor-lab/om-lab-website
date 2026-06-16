@@ -195,7 +195,15 @@
       item.className = 'ps-leg-item';
       const sw = document.createElement('span');
       sw.className = 'ps-swatch';
-      sw.style.background = tr.color;
+      const d = dash(tr.style);
+      if (d.length) {
+        // Dashed/dotted swatch matching the line style (horizontal dashes).
+        const on = d[0], off = d[1] || d[0];
+        sw.style.background =
+          `repeating-linear-gradient(90deg, ${tr.color} 0 ${on}px, transparent ${on}px ${on + off}px)`;
+      } else {
+        sw.style.background = tr.color;
+      }
       item.appendChild(sw);
       item.appendChild(document.createTextNode(
         tr.label + (tr.axis === 'right' ? ' (R)' : '')));

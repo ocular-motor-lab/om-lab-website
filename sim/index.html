@@ -562,15 +562,35 @@ async function loadFeatured(runId, prompt) {
   }
 }
 
+// Thumbnails are fetched (not <img src>) so the ngrok-skip-browser-warning header
+// goes out — a plain <img> GET can't send headers and would get ngrok's HTML
+// interstitial instead of the PNG. Cached by URL so gallery re-renders (search)
+// don't refetch or leak object URLs. Hides the element if the image is missing.
+const _thumbCache = {};
+async function setThumb(imgEl, url) {
+  if (_thumbCache[url]) { imgEl.src = _thumbCache[url]; return; }
+  try {
+    const resp = await fetch(url, { headers: { 'ngrok-skip-browser-warning': 'true' } });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const obj = URL.createObjectURL(await resp.blob());
+    _thumbCache[url] = obj;
+    imgEl.src = obj;
+  } catch (e) {
+    imgEl.style.display = 'none';
+  }
+}
+
 function _exampleCard(r) {
   const backend = getBackend();
   const div = document.createElement('div');
   div.className = 'featured-card';
   div.title = r.prompt || '';
-  const img = backend + '/outputs/server_figures/' + r.run_id + '.png';
   const label = (r.title || r.prompt || 'Example').replace(/&/g, '&amp;').replace(/</g, '&lt;');
-  div.innerHTML = `<img loading="lazy" src="${img}" alt="" onerror="this.style.display='none'">`
-                + `<div class="ftitle">${label}</div>`;
+  const img = document.createElement('img');
+  img.loading = 'lazy'; img.alt = '';
+  const cap = document.createElement('div'); cap.className = 'ftitle'; cap.innerHTML = label;
+  div.appendChild(img); div.appendChild(cap);
+  setThumb(img, backend + '/outputs/server_figures/' + r.run_id + '.png');
   div.onclick = () => loadFeatured(r.run_id, r.prompt);
   return div;
 }
@@ -582,11 +602,14 @@ function _drawerRow(r) {
   const div = document.createElement('div');
   div.className = 'drawer-card';
   div.title = r.prompt || '';
-  const img = backend + '/outputs/server_figures/' + r.run_id + '.png';
   const label = (r.title || r.prompt || 'Example').replace(/&/g, '&amp;').replace(/</g, '&lt;');
   const badge = r.mode === 'comparison' ? '<span class="dc-badge">comparison</span>' : '';
-  div.innerHTML = `<img loading="lazy" src="${img}" alt="" onerror="this.style.display='none'">`
-                + `<div><div class="dc-title">${label}</div>${badge}</div>`;
+  const img = document.createElement('img');
+  img.loading = 'lazy'; img.alt = '';
+  const meta = document.createElement('div');
+  meta.innerHTML = `<div class="dc-title">${label}</div>${badge}`;
+  div.appendChild(img); div.appendChild(meta);
+  setThumb(img, backend + '/outputs/server_figures/' + r.run_id + '.png');
   // Keep the panel open so you can click through several without reopening.
   div.onclick = () => loadFeatured(r.run_id, r.prompt);
   return div;

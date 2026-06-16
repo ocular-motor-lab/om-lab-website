@@ -65,7 +65,8 @@ let _dotLayers = null, _dotH = 1;   // per-size dot layers {geom, base} + half-e
 let _restEyeMid  = null;            // world eye-mid at rest (for the world-fixed target)
 let _gazeAxisL   = null, _gazeAxisR = null;  // eye-local axis that points along gaze
 let _headLocalFwd = null;           // head-local "forward" (for head-fixed cover offset)
-let _eyeLocalL = null, _eyeLocalR = null;  // eye centres in model-local frame (track head rot)
+let _eyeOffL = null, _eyeOffR = null;      // rest bone→rendered-eye offset (world, head-frame)
+let _headQuatRestInv = null;               // inverse of head world quat at rest
 let _modelUnit   = 1;               // world units per metre (from eye separation)
 let _hasTarget   = false, _hasScene = false, _hasLocomotion = false, _showWorld = false;
 // World-camera view presets (switchable via keys d/t/l/r — temporary debug aid).
@@ -155,16 +156,17 @@ new GLTFLoader().load(AVATAR_PATH, (gltf) => {
   if (headBone) {
     const qH0 = headBone.getWorldQuaternion(new THREE.Quaternion());
     _headLocalFwd = new THREE.Vector3(0, 0, 1).applyQuaternion(qH0.invert());
-    // Eye centres in the model's local frame (constant — the eye rotates about its
-    // centre, the head/model rotates the whole frame). Captured from the calibrated
-    // rest anchor (faceMesh.worldToLocal of the bone), then expressed in model-local
-    // so eyeWorldPos can track head rotation (headBone = model) instead of being
-    // model-rotation-invariant (which pinned the rays to the rest pose during VOR).
-    const _t = new THREE.Vector3();
-    leftEyeBone.getWorldPosition(_t);  faceMesh.worldToLocal(_t);  headBone.worldToLocal(_t);
-    _eyeLocalL = _t.clone();
-    rightEyeBone.getWorldPosition(_t); faceMesh.worldToLocal(_t);  headBone.worldToLocal(_t);
-    _eyeLocalR = _t.clone();
+    // Rest offset (world space) from each eye BONE position to the calibrated
+    // rendered-eye anchor. eyeWorldPos = live bone world pos (already tracks head
+    // rotation) + this offset rotated by the head's rotation since rest. This
+    // makes the ray/cover origin orbit with the head during VOR. (faceMesh.world
+    // ToLocal alone is model-rotation-invariant — it pinned origins to rest.)
+    const _t = new THREE.Vector3(), _b = new THREE.Vector3();
+    leftEyeBone.getWorldPosition(_b);  faceMesh.worldToLocal(_t.copy(_b));
+    _eyeOffL = _t.sub(_b).clone();
+    rightEyeBone.getWorldPosition(_b); faceMesh.worldToLocal(_t.copy(_b));
+    _eyeOffR = _t.sub(_b).clone();
+    _headQuatRestInv = headBone.getWorldQuaternion(new THREE.Quaternion()).invert();
   }
 
   // Normal opaque material so the head correctly occludes the props (a target
@@ -296,19 +298,21 @@ function targetWorld(p) {
   return new THREE.Vector3(-p[0], p[1], p[2]).multiplyScalar(_modelUnit).add(_restEyeMid);
 }
 
-// Eye-centre world position + gaze direction. The rendered eye is part of the
-// model (headBone = model), so the centre is taken from the captured model-local
-// point and transformed by the model's CURRENT world matrix — this tracks head
-// rotation (VOR). Using faceMesh.worldToLocal(bone) directly is model-rotation-
-// invariant and would leave the rays at the rest pose while the head turns.
+// Eye-centre world position + gaze direction. Uses the LIVE bone world position
+// (which orbits with the head, headBone = model) plus the rest bone→eye offset
+// rotated by the head's rotation since rest, so the origin tracks head rotation
+// (VOR). At rest the delta is identity → the calibrated rest anchor.
 const _rQ = new THREE.Quaternion();
+const _qNow = new THREE.Quaternion(), _qDelta = new THREE.Quaternion();
 function eyeWorldPos(bone, out) {
-  if (_eyeLocalL && headBone) {
-    out.copy(bone === rightEyeBone ? _eyeLocalR : _eyeLocalL);
-    return headBone.localToWorld(out);
+  bone.getWorldPosition(out);
+  if (_eyeOffL && headBone && _headQuatRestInv) {
+    headBone.getWorldQuaternion(_qNow);
+    _qDelta.copy(_qNow).multiply(_headQuatRestInv);          // head rotation since rest
+    const off = (bone === rightEyeBone ? _eyeOffR : _eyeOffL).clone().applyQuaternion(_qDelta);
+    return out.add(off);
   }
-  bone.getWorldPosition(out);            // fallback (pre-capture)
-  return faceMesh.worldToLocal(out);
+  return faceMesh.worldToLocal(out);                          // fallback (pre-capture)
 }
 function eyeGazeDir(bone, axis) {
   bone.getWorldQuaternion(_rQ);

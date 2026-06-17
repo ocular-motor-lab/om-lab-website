@@ -53,8 +53,12 @@
                    display: inline-block; flex-shrink: 0; }
       /* gantt */
       .ps-gantt-lane { display: flex; align-items: center; height: 24px; margin: 2px 0; }
-      .ps-gantt-label { width: 96px; flex-shrink: 0; font-size: 10px; color: #64748b;
+      .ps-gantt-label { width: 80px; flex-shrink: 0; font-size: 10px; color: #64748b;
                         text-align: right; padding-right: 8px; }
+      /* x-axis label under the stack (shared time axis). Left margin = gutter so
+         it centres over the plot area, which starts after the 80px y-gutter. */
+      .ps-xlabel { text-align: center; font-size: 10px; color: #64748b;
+                   margin: 1px 0 4px 80px; }
       .ps-gantt-track { position: relative; flex: 1; height: 20px;
                         background: #eef0f4; border-radius: 3px; overflow: hidden; }
       .ps-gantt-seg { position: absolute; top: 0; height: 100%; display: flex;
@@ -141,7 +145,7 @@
       { stroke: '#475569', grid: { stroke: '#e5e7eb', width: 1 },
         ticks: { stroke: '#d3d7e0' }, font: '10px sans-serif' },
       { scale: 'y', stroke: '#475569', grid: { stroke: '#e5e7eb', width: 1 },
-        ticks: { stroke: '#d3d7e0' }, font: '10px sans-serif', size: 52 },
+        ticks: { stroke: '#d3d7e0' }, font: '10px sans-serif', size: 80 },   // gutter matches gantt label width (alignment)
     ];
     const scales = { x: { time: false }, y: { range: yRange } };
     if (hasRight) {
@@ -349,6 +353,12 @@
         container.appendChild(err);
       }
     });
+
+    // Shared x-axis label under the bottom panel.
+    const xlabel = document.createElement('div');
+    xlabel.className = 'ps-xlabel';
+    xlabel.textContent = 'time (s)';
+    container.appendChild(xlabel);
 
     const hint = document.createElement('div');
     hint.className = 'ps-hint';

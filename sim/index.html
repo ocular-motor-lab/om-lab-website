@@ -123,9 +123,6 @@
   .fig-btn:disabled { opacity: 0.4; cursor: not-allowed; }
   .plot-host { width: 100%; background: #fff; border: 1px solid #e3e6ec;
                border-radius: 8px; padding: 6px 4px; margin-top: 10px; }
-  .plot-key { font-size: 0.72rem; color: #94a3b8; line-height: 1.55;
-              margin-top: 8px; max-width: 760px; }
-  .plot-key a { color: #64748b; }
   .plot-host .u-legend { color: #475569; }
 
   details { margin-top: 16px; border: 1px solid #e3e6ec; border-radius: 8px; overflow: hidden; }
@@ -350,16 +347,6 @@
 
     <!-- Interactive plots (uPlot) — primary view -->
     <div class="plot-host" id="plot-host" style="display:none;margin-top:20px;"></div>
-    <div class="plot-key" id="plot-key" style="display:none;">
-      Each panel lists its traces in the legend above it. Line conventions:
-      <b>solid</b> = horizontal (yaw), <b>dashed</b> = vertical (pitch),
-      <b>dotted</b> = torsion or target. In the eye-position panel,
-      <span style="color:#2166ac;font-weight:600">blue</span> = left eye and
-      <span style="color:#d6604d;font-weight:600">red</span> = right eye.
-      Gray bands mark dark periods (scene off); the dashed line at 0 is the reference.
-      Full state definitions are on the
-      <a href="states.html" target="_blank">states &amp; activations</a> page.
-    </div>
 
     <!-- Patient parameter changes — populated from RunResponse.patient_changes -->
     <div id="patient-changes-section" style="display:none;margin-top:18px;">
@@ -701,20 +688,17 @@ let _figHandle = null;
 
 function renderInteractivePlot(spec) {
   const host = document.getElementById('plot-host');
-  const key  = document.getElementById('plot-key');
   if (_figHandle) { try { _figHandle.destroy(); } catch (e) {} _figHandle = null; }
 
   const canInteractive = spec && (typeof uPlot !== 'undefined') && window.PlotSpec;
-  if (!canInteractive) { host.style.display = 'none'; if (key) key.style.display = 'none'; return; }
+  if (!canInteractive) { host.style.display = 'none'; return; }
 
   host.style.display = 'block';                    // visible before render → correct width
   try {
     _figHandle = window.PlotSpec.render(host, spec);
-    if (key) key.style.display = 'block';
   } catch (e) {
     console.error('Interactive plot failed.', e);
     host.style.display = 'none';
-    if (key) key.style.display = 'none';
   }
 }
 

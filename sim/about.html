@@ -26,6 +26,13 @@
   a:hover { text-decoration: underline; }
   ul { margin: 4px 0 12px 20px; }
   li { font-size: 0.92rem; line-height: 1.6; color: #334155; margin-bottom: 5px; }
+  h3 { font-size: 0.98rem; color: #1a1a2e; margin: 18px 0 6px; }
+  table.io { width: 100%; border-collapse: collapse; margin: 4px 0 14px; font-size: 0.84rem; }
+  table.io th, table.io td { border: 1px solid #e3e6ec; padding: 6px 9px;
+                             text-align: left; vertical-align: top; }
+  table.io th { background: #f5f7fa; color: #334155; font-weight: 600; }
+  table.io td:first-child { font-family: 'SF Mono', Consolas, monospace;
+                            color: #1a1a2e; white-space: nowrap; }
   .note { font-size: 0.82rem; color: #64748b; background: #f8fafc;
           border: 1px solid #e3e6ec; border-radius: 8px; padding: 12px 14px; margin-top: 18px; }
   .site-footer {
@@ -72,6 +79,72 @@
     plain-English description is turned into a stimulus and parameter set, the dynamics are
     integrated, and the resulting eye, head, target, and scene signals are drawn as zoomable,
     cursor-synced plots alongside a head-fixed and world view of an avatar.
+  </p>
+
+  <h2>Simulation inputs</h2>
+  <p>
+    A scenario is built from four time-segment channels — <strong>head</strong>, <strong>target</strong>,
+    and <strong>scene</strong> motion plus <strong>visual</strong> context — together with optional
+    <strong>patient</strong> parameter changes and a <strong>plot</strong> selection. Each channel is a
+    list of segments concatenated in time, and the trial lasts as long as the longest channel.
+    Describing a scenario in plain English fills these in automatically, but every field below can be
+    set directly (via the JSON a description produces).
+  </p>
+
+  <h3>Motion channels — head, target, scene</h3>
+  <p>
+    Each is a list of 6-degree-of-freedom segments. <em>head</em> drives the canals and otoliths;
+    <em>target</em> is the foveal target in 3-D space (its z is the viewing distance); <em>scene</em>
+    is the full-field visual background (drives OKR/OKN). Angles are in degrees, positions in metres
+    (x = right, y = up, z = forward/depth). A field left unset carries over from the previous segment.
+  </p>
+  <table class="io">
+    <tr><th>Field</th><th>Meaning</th></tr>
+    <tr><td>duration_s</td><td>segment length in seconds</td></tr>
+    <tr><td>rot_{yaw,pitch,roll}_0</td><td>initial angle (deg)</td></tr>
+    <tr><td>rot_{yaw,pitch,roll}_vel</td><td>angular velocity (deg/s); the amplitude for sinusoid / impulse</td></tr>
+    <tr><td>rot_{yaw,pitch,roll}_acc</td><td>angular acceleration (deg/s²)</td></tr>
+    <tr><td>lin_{x,y,z}_0</td><td>initial position (m); z = depth / viewing distance</td></tr>
+    <tr><td>lin_{x,y,z}_vel</td><td>linear velocity (m/s)</td></tr>
+    <tr><td>lin_{x,y,z}_acc</td><td>linear acceleration (m/s²); y = −9.81 gives gravity</td></tr>
+    <tr><td>rot_profile</td><td><code>constant</code> · <code>sinusoid</code> · <code>impulse</code> (vHIT trapezoid)</td></tr>
+    <tr><td>frequency_hz</td><td>oscillation frequency for the sinusoid profile (Hz)</td></tr>
+    <tr><td>ramp_dur_s</td><td>rise/fall time for the impulse profile (s)</td></tr>
+  </table>
+
+  <h3>Visual context — visual</h3>
+  <p>A list of per-segment visibility flags:</p>
+  <table class="io">
+    <tr><th>Field</th><th>Meaning</th></tr>
+    <tr><td>scene_present</td><td>is the room lit? (visual stabilisation / OKR active)</td></tr>
+    <tr><td>target_present</td><td>is a foveal target visible? (pursuit + saccades active)</td></tr>
+    <tr><td>scene_present_{L,R}<br>target_present_{L,R}</td><td>per-eye overrides of the above</td></tr>
+    <tr><td>cover_L / cover_R</td><td>patch (occlude) an eye — it goes dark, vergence drifts toward phoria</td></tr>
+    <tr><td>prism_L / prism_R</td><td>prism over an eye: [yaw, pitch, roll] deviation in deg (1Δ ≈ 0.57°)</td></tr>
+    <tr><td>target_strobed</td><td>stroboscopic target — position visible (saccades) but velocity absent (no pursuit)</td></tr>
+  </table>
+
+  <h3>Patient</h3>
+  <p>
+    Overrides of model parameters from their healthy defaults — canal gains (vestibular loss),
+    velocity-storage and neural-integrator time constants, saccade / pursuit / vergence gains,
+    cerebellar gains, cranial-nerve / nucleus / MLF lesions, the plant, and more. See the
+    <a href="parameters.html">parameters</a> page for the complete list with units, ranges, and
+    anatomical meaning.
+  </p>
+
+  <h3>Plot</h3>
+  <p>
+    Which signal panels to show. Core readouts (eye position, eye velocity, vergence) lead; for
+    nystagmus add slow-phase velocity; then the driving stimulus and the internal-mechanism panel the
+    test probes. The underlying signals are documented on the
+    <a href="states.html">states &amp; activations</a> page.
+  </p>
+
+  <h3>Comparison</h3>
+  <p>
+    Two or more scenarios can be run and overlaid on the same panels to contrast conditions —
+    e.g. healthy vs lesioned, or with vs without a manipulation.
   </p>
 
   <div class="note">

@@ -403,7 +403,9 @@ function anchorPrisms() {
     if (!mesh.visible || !dev) return;
     eyeWorldPos(bone, mesh.position).addScaledVector(fwd, _PRISM_FWD * _modelUnit);
     const power     = Math.hypot(dev[0] || 0, dev[1] || 0);
-    const baseAngle = Math.atan2(dev[1] || 0, dev[0] || 0);   // base dir in right-up plane
+    // Base direction in the frontal plane; negate yaw because the avatar's
+    // horizontal axis is flipped vs the sim (avatar x = −sim x); pitch is not.
+    const baseAngle = Math.atan2(dev[1] || 0, -(dev[0] || 0));
     _qz.setFromAxisAngle(_AXz, baseAngle);
     mesh.quaternion.copy(_rQ).multiply(_qz);                  // head frame ⊗ base rotation
     mesh.scale.set(1, 1, Math.min(1.8, Math.max(0.3, power / 4)));   // thickness ∝ power

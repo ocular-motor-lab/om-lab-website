@@ -140,6 +140,26 @@
     test probes. The underlying signals are documented on the
     <a href="states.html">states &amp; activations</a> page.
   </p>
+  <p>
+    <strong>Reading the eye-position panel.</strong> Both eyes (L, R) are always drawn so you can see
+    binocular behaviour — cover test, phoria/tropia, nerve palsy, skew. Because each eye must point at
+    a slightly different angle to fixate a <em>near</em> target (that difference <em>is</em> the
+    convergence), the horizontal axis is <em>zero-referenced</em> so the traces stay readable at any
+    distance, and what 0 means is stated in the axis label:
+  </p>
+  <ul>
+    <li><strong>0 = on target @ <em>distance</em></strong> — a target at a fixed distance: both eyes
+        sit on the target line when fixating, and any misalignment makes them split apart (the cover
+        test deviation, a palsy, etc.).</li>
+    <li><strong>0 = resting position</strong> — no target (e.g. in the dark): both eyes read ~0 at
+        rest, so drift and nystagmus are read around zero.</li>
+    <li><strong>0 = straight ahead</strong> — a target whose distance changes: absolute angles, so the
+        convergence/divergence movements stay visible (the vergence panel shows actual vs required).</li>
+  </ul>
+  <p>
+    This is a display calibration only — the downloaded data and the underlying simulation keep the
+    raw, absolute eye angles.
+  </p>
 
   <h3>Comparison</h3>
   <p>

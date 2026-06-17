@@ -586,11 +586,13 @@ window.loadEyeTrajectory = function(traj) {
   const wrap = document.querySelector('.avatar-wrap');
   if (wrap) wrap.classList.toggle('single-view', !_showWorld);
 
-  document.getElementById('play-btn').textContent = '▶';
   document.getElementById('scrubber').max         = traj.n_frames - 1;
   document.getElementById('scrubber').value       = 0;
   updateTimeDisplay(0);
   applyFrame(0);
+  // Auto-play on load (example loaded or simulation finished).
+  _frame = 0; _lastRafTs = null; _playing = true;
+  document.getElementById('play-btn').textContent = '⏸';
 };
 
 window._avatarTogglePlay = function() {
@@ -661,7 +663,10 @@ function animate(ts) {
   requestAnimationFrame(animate);
   updateBlink(ts);   // spontaneous blink (eyelids), independent of playback
 
-  if (_playing && _traj) {
+  // Gate playback on the rig being loaded — otherwise a sim that arrives before
+  // the glTF finishes loading would race the timeline past the end (avatar frozen
+  // on the last frame, autoplay looking broken). Wait at frame 0 until bones exist.
+  if (_playing && _traj && leftEyeBone) {
     if (_lastRafTs !== null) {
       _frame += (ts - _lastRafTs) / 1000 * _traj.fps;
       if (_frame >= _traj.n_frames) {

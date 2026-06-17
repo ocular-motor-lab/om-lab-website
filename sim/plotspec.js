@@ -128,7 +128,11 @@
         spanGaps: false,
         points: { show: false },
       });
-      data.push(tr.y);
+      // `offset` is the binocular zero-reference, applied here at render time so
+      // the spec's y data stays raw/veridical (and a raw↔calibrated toggle is easy).
+      data.push(tr.offset
+        ? tr.y.map((v) => (v == null ? null : v + tr.offset))
+        : tr.y);
     });
 
     const yRange = (u, dMin, dMax) => {

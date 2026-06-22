@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OMSim — Parameter Reference</title>
+  <title>ViSiOMlab — Parameter Reference</title>
   <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -84,7 +84,7 @@ tr:last-child { border-bottom: none; }
     <a href="#brainparams">BrainParams</a>
     <a href="#brainparams-self_motion_estimation" style="padding-left:32px;font-size:11px;color:#aaa">Self Motion Estimation <span style="color:#666">(18)</span></a>
     <a href="#brainparams-neural_integrator" style="padding-left:32px;font-size:11px;color:#aaa">Neural Integrator <span style="color:#666">(7)</span></a>
-    <a href="#brainparams-ungrouped" style="padding-left:32px;font-size:11px;color:#aaa">Ungrouped <span style="color:#666">(17)</span></a>
+    <a href="#brainparams-ungrouped" style="padding-left:32px;font-size:11px;color:#aaa">Ungrouped <span style="color:#666">(19)</span></a>
     <a href="#brainparams-binocular" style="padding-left:32px;font-size:11px;color:#aaa">Binocular <span style="color:#666">(5)</span></a>
     <a href="#brainparams-saccade_generator" style="padding-left:32px;font-size:11px;color:#aaa">Saccade Generator <span style="color:#666">(29)</span></a>
     <a href="#brainparams-listing" style="padding-left:32px;font-size:11px;color:#aaa">Listing <span style="color:#666">(2)</span></a>
@@ -108,23 +108,23 @@ tr:last-child { border-bottom: none; }
     <a href="#plantparams-plant" style="padding-left:32px;font-size:11px;color:#aaa">Plant <span style="color:#666">(3)</span></a>
     <div style="border-top:1px solid #2a2a4e;margin:18px 12px 8px;"></div>
     <h2>Other pages</h2>
-    <a href="benchmarks">Benchmarks</a>
-    <a href="clinical_benchmarks">Clinical benchmarks</a>
+    <a href="benchmarks/">Benchmarks</a>
+    <a href="clinical_benchmarks/">Clinical benchmarks</a>
     <a href="index.html">LLM simulator</a>
   </nav>
   <main>
-    <h1>OMSim — Parameter Reference</h1>
+    <h1>ViSiOMlab — Parameter Reference</h1>
     <p class="meta">
-      Generated: <strong>2026-05-25 13:59</strong> &nbsp;|&nbsp;
-      Version: <strong>81ef8db-dirty</strong> &nbsp;|&nbsp;
-      Schema: <strong>D:\OneDrive\UC Berkeley\OMlab - JOM\Code\ClaudeOculomotorJax\docs\parameters_schema.yaml</strong>
+      Generated: <strong>2026-06-20 04:52</strong> &nbsp;|&nbsp;
+      Version: <strong>ca9ae0f-dirty</strong> &nbsp;|&nbsp;
+      Schema: <strong>D:\OneDrive\UC Berkeley\OMlab - JOM\Code\ClaudeOculomotorJax\src\oculomotor\schema\parameters_schema.yaml</strong>
     </p>
     <input id="search" type="search" placeholder="Search parameters by name, description, anatomy, disorder…" autofocus>
     <div id="match-count" class="match-count"></div>
-    <div class="warning"><b>20 fields lack schema entries</b> and are flagged TODO below. Add to <code>docs/parameters_schema.yaml</code> to provide rich descriptions, anatomy, and disorder tags.</div><div class="warning"><b>2 stale schema entries</b> do not match any current field: <code>brain.b_vs_L, brain.b_vs_R</code>. Remove from YAML or rename to match the current code.</div>
+    <div class="warning"><b>22 fields lack schema entries</b> and are flagged TODO below. Add to <code>oculomotor/schema/parameters_schema.yaml</code> to provide rich descriptions, anatomy, and disorder tags.</div><div class="warning"><b>2 stale schema entries</b> do not match any current field: <code>brain.b_vs_L, brain.b_vs_R</code>. Remove from YAML or rename to match the current code.</div>
     
   <section class="section" id="brainparams">
-    <h2>BrainParams <small style="font-size:12px;font-weight:400;color:#888">(120 fields)</small></h2>
+    <h2>BrainParams <small style="font-size:12px;font-weight:400;color:#888">(122 fields)</small></h2>
     <p class="desc">Central neural model parameters — VS, NI, SG, gravity, vergence, accommodation, T-VOR, OCR, CN/MLF gains. Read by every brain submodule's <code>step()</code>.</p>
     
     <div class="subsection" id="brainparams-self_motion_estimation">
@@ -410,7 +410,7 @@ tr:last-child { border-bottom: none; }
     </div>
 
     <div class="subsection" id="brainparams-ungrouped">
-      <h3>Ungrouped <small style="font-size:11px;font-weight:400;color:#888">(17 fields)</small></h3>
+      <h3>Ungrouped <small style="font-size:11px;font-weight:400;color:#888">(19 fields)</small></h3>
       <table class="param-table">
         <thead><tr>
           <th style="width:160px">Parameter</th>
@@ -588,6 +588,26 @@ tr:last-child { border-bottom: none; }
           <td class="units"></td>
           <td class="range-cell"></td>
           <td class="desc-cell"><p>floccular VS leak-cancellation gain. Same Cannon-Robinson architecture applied to velocity storage. Default 0 because the current tau_vs = 20 s already represents the FL-extended effective TC; enabling this on top would push tau_vs → ∞ and break OKAN. To opt in: shorten tau_vs to its intrinsic brainstem value (~5 s) and set K_cereb_fl_vs = 0.75 to restore effective tau_vs ≈ 20 s with an explicit FL contribution that can be lesioned (K = 0 → tau_vs ≈ intrinsic 5 s, shortened OKAN).</p></td>
+          <td class="anatomy-cell"></td>
+          <td></td>
+        </tr>
+
+        <tr>
+          <td class="param-name">K_cereb_acc<span class="todo">TODO: enrich schema</span></td>
+          <td><span class="default">0.8</span></td>
+          <td class="units"></td>
+          <td class="range-cell"></td>
+          <td class="desc-cell"><p>cerebellar accommodation forward-model gain (ventral paraflocculus near-response). va.step corrects defocus by K_cereb_acc·(ec_accom − current_accom): the eye's in-flight accommodation, so the accommodation loop stops driving on stale defocus (Read 2022 predictive accommodation). 1 → full Smith correction (no overshoot); 0 → lesion: raw delayed-defocus feedback → accommodation rings, and AC/A relays the ring into vergence (Hung-1997 overshoot).</p></td>
+          <td class="anatomy-cell"></td>
+          <td></td>
+        </tr>
+
+        <tr>
+          <td class="param-name">K_cereb_verg<span class="todo">TODO: enrich schema</span></td>
+          <td><span class="default">1.5</span></td>
+          <td class="units"></td>
+          <td class="range-cell"></td>
+          <td class="desc-cell"><p>cerebellar vergence forward-model gain — mirror of K_cereb_acc for the disparity loop. va.step corrects disparity-H by K_cereb_verg·(current_ vergence − ec_verg) so the vergence loop sees its own in-flight convergence and AC/A can't drive it past target. 0 → raw delayed-disparity feedback.</p></td>
           <td class="anatomy-cell"></td>
           <td></td>
         </tr>
@@ -1084,7 +1104,7 @@ tr:last-child { border-bottom: none; }
         <tbody>
         <tr>
           <td class="param-name">K_phasic_verg<span class="llm-tag" title="Exposed in the LLM Patient schema">LLM</span></td>
-          <td><span class="default">3</span></td>
+          <td><span class="default">12</span></td>
           <td class="units">1/s</td>
           <td class="range-cell">[0, +∞]</td>
           <td class="desc-cell"><p>Direct phasic vergence gain. Provides the ~150–200 ms fast onset (Rashbass & Westheimer 1961), achieved via plant cancellation.</p><div class="refs">Rashbass & Westheimer (1961) J Physiol 159:339</div></td>

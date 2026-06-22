@@ -69,31 +69,59 @@ let _gazeAxisL   = null, _gazeAxisR = null;  // eye-local axis that points along
 let _headLocalFwd = null;           // head-local "forward" (for head-fixed cover offset)
 let _modelUnit   = 1;               // world units per metre (from eye separation)
 let _hasTarget   = false, _hasScene = false, _hasLocomotion = false, _showWorld = false;
-// World-camera view presets (switchable via keys d/t/l/r — temporary debug aid).
-let _camRefEye = null, _camRefSize = 1, _camNear = 0.01, _camFar = 100;
+// World-camera framing. The head sits at _camRefEye (the rest eye-midpoint, the
+// frame the props live in); _fitCenter/_fitRadius are computed per trajectory so
+// the head AND every target stay in the (narrow) panel. Preset switches d/t/l/r.
+let _camRefEye = null, _camRefSize = 1, _camRefRadius = 1, _camNear = 0.01, _camFar = 100;
+let _fitCenter = null, _fitRadius = 1, _camMode = 'default', _needWorldFit = false;
 
-function setWorldView(mode) {
-  if (!_camRefEye) return;
-  const e = _camRefEye, s = _camRefSize, u = _modelUnit;
-  worldCam.fov = 36;
-  const fwd = 0.5 * u;   // aim at the eye→target midpoint (target ≈ 1 u in front)
-  let pos, look;
-  if (mode === 'top') {
-    pos  = new THREE.Vector3(e.x, e.y + s * 1.9, e.z - s * 0.15);
-    look = new THREE.Vector3(e.x, e.y, e.z + fwd);
-  } else if (mode === 'left') {
-    pos  = new THREE.Vector3(e.x - s * 1.8, e.y + s * 0.25, e.z + fwd);
-    look = new THREE.Vector3(e.x, e.y, e.z + fwd);
-  } else if (mode === 'right') {
-    pos  = new THREE.Vector3(e.x + s * 1.8, e.y + s * 0.25, e.z + fwd);
-    look = new THREE.Vector3(e.x, e.y, e.z + fwd);
-  } else {  // default: behind + above
-    pos  = new THREE.Vector3(e.x + s * 0.35, e.y + s * 0.65, e.z - s * 1.15);
-    look = new THREE.Vector3(e.x, e.y - s * 0.05, e.z + fwd);
+// Sample the trajectory once and build the world-space extent that must stay
+// visible: the head (a sphere around the rest eye-midpoint) + every PRESENT
+// target position. Props are scene children, so getWorldPosition is their true
+// rendered location — no need to reason about the skinned-rig origin offset.
+function fitWorldCamera() {
+  if (!_camRefEye || !_traj || !leftEyeBone || !rightEyeBone) return;
+  const rHead = _camRefRadius * 0.6;                    // skull padding around the eyes
+                                                        // (eye-sweep already covers motion)
+  const box = new THREE.Box3().makeEmpty();
+  const n = _traj.n_frames, step = Math.max(1, Math.floor(n / 48));
+  const saved = Math.min(Math.floor(_frame), n - 1);
+  const a = new THREE.Vector3(), b = new THREE.Vector3();
+  for (let i = 0; i < n; i += step) {
+    applyFrame(i);                                       // sets head rotation for frame i
+    // getWorldPosition flushes the world matrix, so these track the head as it
+    // pitches / yaws / tilts back — the whole sweep stays in the box.
+    box.expandByPoint(leftEyeBone.getWorldPosition(a));
+    box.expandByPoint(rightEyeBone.getWorldPosition(b));
+    if (targetSphere && targetSphere.visible) box.expandByPoint(targetSphere.getWorldPosition(a));
   }
-  worldCam.position.copy(pos);
-  worldCam.lookAt(look);
-  worldCam.near = _camNear; worldCam.far = Math.max(_camFar, s * 60);
+  applyFrame(saved);                                    // restore current frame
+  const s = box.getBoundingSphere(new THREE.Sphere());
+  _fitCenter = s.center.clone();
+  _fitRadius = (s.radius + rHead) * 1.06;               // + head extent, + margin
+}
+
+// Position the world camera from the fitted sphere, honouring the narrow panel
+// (horizontal fov is the binding constraint). Direction comes from the preset.
+function setWorldView(mode) {
+  if (mode) _camMode = mode;
+  if (!_fitCenter) return;
+  const c = _fitCenter, r = _fitRadius;
+  worldCam.fov = 36;
+  const aspect = worldCam.aspect || 0.5;
+  const vfov = THREE.MathUtils.degToRad(worldCam.fov);
+  const hfov = 2 * Math.atan(Math.tan(vfov / 2) * Math.min(1, aspect));
+  const dist = r / Math.sin(Math.min(vfov, hfov) / 2);
+  let dir;
+  if      (_camMode === 'top')   dir = new THREE.Vector3(0,  1, -0.12);
+  else if (_camMode === 'left')  dir = new THREE.Vector3(-1, 0.22, 0.05);
+  else if (_camMode === 'right') dir = new THREE.Vector3(1,  0.22, 0.05);
+  else                           dir = new THREE.Vector3(0.32, 0.55, -1.0);  // behind + above
+  dir.normalize();
+  worldCam.position.copy(c).addScaledVector(dir, dist);
+  worldCam.lookAt(c);
+  worldCam.near = Math.max(0.001, dist - r * 3);
+  worldCam.far  = dist + Math.max(r * 6, _camFar);   // keep the dot surround visible
   worldCam.updateProjectionMatrix();
 }
 
@@ -250,7 +278,8 @@ new GLTFLoader().load(AVATAR_PATH, (gltf) => {
   // World camera: store reference frame, then apply the default view. Switch
   // views with d (default) / t (top) / l (left) / r (right).
   _camRefEye = eyeMid.clone(); _camRefSize = size.y; _camNear = near; _camFar = far;
-  setWorldView('default');
+  _camRefRadius = box.getBoundingSphere(new THREE.Sphere()).radius;   // true head extent
+  _needWorldFit = true;   // (re)fit once the world view renders with a trajectory
 
   // Eye-cover patches: a semi-transparent black disc over a covered eyeball,
   // shown when that eye is in darkness (monocular cover). Anchored per-frame to
@@ -550,6 +579,7 @@ window.loadEyeTrajectory = function(traj) {
   _traj    = traj;
   _frame   = 0;
   _playing = false;
+  _needWorldFit = true;   // new trajectory → refit the world camera to head + targets
 
   // Detect meaningful head movement (any axis > 1 deg peak displacement)
   _headMoves = false;
@@ -641,7 +671,11 @@ function renderViewports() {
 
     // Right — world view: re-apply the rotated head (also restores props/rays).
     applyFrame(fi);
-    worldCam.aspect = worldW / h; worldCam.updateProjectionMatrix();
+    worldCam.aspect = worldW / h;
+    if (_needWorldFit && _camRefEye && leftEyeBone) {   // wait for the rig to load
+      fitWorldCamera(); _needWorldFit = false;
+    }
+    setWorldView();                       // place camera (aspect-correct) every frame
     renderer.setViewport(headW, 0, worldW, h);
     renderer.setScissor(headW, 0, worldW, h);
     renderer.render(scene, worldCam);

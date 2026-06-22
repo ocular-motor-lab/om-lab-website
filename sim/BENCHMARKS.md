@@ -1,4 +1,4 @@
-# OculomotorJax — Benchmark Specification
+# ViSiOMlab — Benchmark Specification
 
 Each section lists the expected behaviors and numerical targets.
 Literature citations give the primary source for each criterion.

@@ -92,7 +92,7 @@ tr:last-child { border-bottom: none; }
     <a href="#brainparams-vergence" style="padding-left:32px;font-size:11px;color:#aaa">Vergence <span style="color:#666">(12)</span></a>
     <a href="#brainparams-tvor" style="padding-left:32px;font-size:11px;color:#aaa">Tvor <span style="color:#666">(6)</span></a>
     <a href="#brainparams-accommodation" style="padding-left:32px;font-size:11px;color:#aaa">Accommodation <span style="color:#666">(9)</span></a>
-    <a href="#brainparams-final_common_pathway" style="padding-left:32px;font-size:11px;color:#aaa">Final Common Pathway <span style="color:#666">(6)</span></a>
+    <a href="#brainparams-final_common_pathway" style="padding-left:32px;font-size:11px;color:#aaa">Final Common Pathway <span style="color:#666">(8)</span></a>
     <a href="#brainparams-cerebellum" style="padding-left:32px;font-size:11px;color:#aaa">Cerebellum <span style="color:#666">(4)</span></a>
     <div style="height:8px"></div>
     <a href="#sensoryparams">SensoryParams</a>
@@ -115,16 +115,16 @@ tr:last-child { border-bottom: none; }
   <main>
     <h1>ViSiOMlab — Parameter Reference</h1>
     <p class="meta">
-      Generated: <strong>2026-06-20 04:52</strong> &nbsp;|&nbsp;
-      Version: <strong>ca9ae0f-dirty</strong> &nbsp;|&nbsp;
+      Generated: <strong>2026-06-25 08:18</strong> &nbsp;|&nbsp;
+      Version: <strong>9877e87-dirty</strong> &nbsp;|&nbsp;
       Schema: <strong>D:\OneDrive\UC Berkeley\OMlab - JOM\Code\ClaudeOculomotorJax\src\oculomotor\schema\parameters_schema.yaml</strong>
     </p>
     <input id="search" type="search" placeholder="Search parameters by name, description, anatomy, disorder…" autofocus>
     <div id="match-count" class="match-count"></div>
-    <div class="warning"><b>22 fields lack schema entries</b> and are flagged TODO below. Add to <code>oculomotor/schema/parameters_schema.yaml</code> to provide rich descriptions, anatomy, and disorder tags.</div><div class="warning"><b>2 stale schema entries</b> do not match any current field: <code>brain.b_vs_L, brain.b_vs_R</code>. Remove from YAML or rename to match the current code.</div>
+    <div class="warning"><b>22 fields lack schema entries</b> and are flagged TODO below. Add to <code>oculomotor/schema/parameters_schema.yaml</code> to provide rich descriptions, anatomy, and disorder tags.</div>
     
   <section class="section" id="brainparams">
-    <h2>BrainParams <small style="font-size:12px;font-weight:400;color:#888">(122 fields)</small></h2>
+    <h2>BrainParams <small style="font-size:12px;font-weight:400;color:#888">(124 fields)</small></h2>
     <p class="desc">Central neural model parameters — VS, NI, SG, gravity, vergence, accommodation, T-VOR, OCR, CN/MLF gains. Read by every brain submodule's <code>step()</code>.</p>
     
     <div class="subsection" id="brainparams-self_motion_estimation">
@@ -504,10 +504,10 @@ tr:last-child { border-bottom: none; }
 
         <tr>
           <td class="param-name">alpha_fac<span class="todo">TODO: enrich schema</span></td>
-          <td><span class="default">1</span></td>
+          <td><span class="default">0.5</span></td>
           <td class="units"></td>
           <td class="range-cell"></td>
-          <td class="desc-cell"><p>facilitation gain: g_dyn = 1 + alpha_fac·z_fac during burst — post-inhibitory-rebound boost of the burst neurons (z_fac rises toward 1 while OPN is paused).  ~1.0 steepens the main sequence toward 700(1−e^{−A/7}) without de-stabilising the burst loop.</p></td>
+          <td class="desc-cell"><p>facilitation gain: g_dyn = 1 + alpha_fac·z_fac during burst — post-inhibitory-rebound boost of the burst neurons (z_fac rises toward 1 while OPN is paused). Lowered 1.0 → 0.5: at 1.0 the facilitation over-drove the burst near the end, giving a ~0.36° command overshoot (40°) + post-saccadic ring; 0.5 trims that to ~0.08° with #saccades still 1 and peak velocity essentially unchanged (g_burst caps large saccades).</p></td>
           <td class="anatomy-cell"></td>
           <td></td>
         </tr>
@@ -1408,7 +1408,7 @@ tr:last-child { border-bottom: none; }
     </div>
 
     <div class="subsection" id="brainparams-final_common_pathway">
-      <h3>Final Common Pathway <small style="font-size:11px;font-weight:400;color:#888">(6 fields)</small></h3>
+      <h3>Final Common Pathway <small style="font-size:11px;font-weight:400;color:#888">(8 fields)</small></h3>
       <table class="param-table">
         <thead><tr>
           <th style="width:160px">Parameter</th>
@@ -1478,6 +1478,26 @@ tr:last-child { border-bottom: none; }
           <td class="desc-cell"><p>Conduction cap on the right MLF axon tract.  Symmetric to g_mlf_L: 0 = right INO; partial = recovering.  Bilateral INO when both = 0.</p></td>
           <td class="anatomy-cell">Right MLF axon conduction (AIN_L → MR_R pathway)</td>
           <td><span class="tag tag-ino">Right INO: 0.0</span> <span class="tag tag-ino">Bilateral INO (BIMLF): 0.0</span></td>
+        </tr>
+
+        <tr>
+          <td class="param-name">mn_ff_yaw</td>
+          <td><span class="default">1</span></td>
+          <td class="units">—</td>
+          <td class="range-cell">[0, 2]</td>
+          <td class="desc-cell"><p>Scales the yaw motoneuron-LP feedforward term in the NI pulse–step (τ_mn_eff = τ_mn·[mn_ff_yaw, 1, 1]).  1.0 (default) = the common 1st MN stage — settles the post-saccadic landing ~4× cleaner.  1.5 = the version-averaged inverse (half 1-stage abducting LR + half 2-stage adducting MR via MLF), which over-drives the saccade end and rings.  The exact per-eye split is 1.0 here plus mlf_lead (the MR's extra stage).</p></td>
+          <td class="anatomy-cell">Version MN-LP feedforward scale (pulse–step plant inverse, yaw)</td>
+          <td></td>
+        </tr>
+
+        <tr>
+          <td class="param-name">mlf_lead</td>
+          <td><span class="default">0</span></td>
+          <td class="units">—</td>
+          <td class="range-cell">[0, 1]</td>
+          <td class="desc-cell"><p>Per-eye MLF feedforward lead in the FCP, 0–1.  0 (default, dormant) = pure version drive; 1 = full monocular compensation of the adducting eye's extra MR conduction stage (AIN→MLF→CN3-MR).  A legitimate per-eye knob (e.g. INO modelling) but not the post-saccadic lever — it trades the onset velocity gap for a larger settling ring (Decomp #4/#6, post_saccadic_motion.md).</p></td>
+          <td class="anatomy-cell">Per-eye MLF feedforward lead blend (adducting MR)</td>
+          <td></td>
         </tr>
         </tbody>
       </table>

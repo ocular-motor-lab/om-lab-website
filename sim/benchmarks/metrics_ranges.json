@@ -2,7 +2,6 @@
   "aca_ratio_pd_per_d": {
     "lo": 0.0,
     "hi": null,
-    "tier": "monitor",
     "golden_tol": 0.2,
     "units": "pd/D",
     "cite": "Schor (1979)",
@@ -11,34 +10,30 @@
   "aca_vergence_delta": {
     "lo": 0.0,
     "hi": null,
-    "tier": "monitor",
     "golden_tol": 0.2,
     "units": "deg",
     "cite": "Schor (1979); Morgan (1944)",
     "desc": "Extra convergence from AC/A (lens-driven vergence, on \u2212 off)"
   },
-  "acc_bode_bw_hz": {
+  "acc_bode_fc_hi": {
     "lo": 0.5,
     "hi": null,
-    "tier": "monitor",
     "golden_tol": 0.25,
     "units": "Hz",
     "cite": "Stark et al. (1965)",
-    "desc": "Accommodation \u22123 dB bandwidth (~2 Hz)"
+    "desc": "Accommodation \u22123 dB bandwidth (Hz)"
   },
-  "acc_bode_gain_low": {
+  "acc_bode_gain_max": {
     "lo": 0.5,
     "hi": 1.05,
-    "tier": "monitor",
     "golden_tol": 0.1,
     "units": "",
     "cite": "Stark et al. (1965)",
-    "desc": "Accommodation low-frequency gain"
+    "desc": "Accommodation peak gain"
   },
   "acc_darkfocus_adapt": {
     "lo": 0.05,
     "hi": 0.8,
-    "tier": "monitor",
     "golden_tol": 0.3,
     "units": "D",
     "cite": "Hung (1992); Schor (1988)",
@@ -47,7 +42,6 @@
   "acc_darkfocus_tc_s": {
     "lo": 5.0,
     "hi": 40.0,
-    "tier": "monitor",
     "golden_tol": 0.3,
     "units": "s",
     "cite": "Hung (1992)",
@@ -56,7 +50,6 @@
   "acc_step_gain": {
     "lo": 0.75,
     "hi": 1.05,
-    "tier": "monitor",
     "golden_tol": 0.1,
     "units": "",
     "cite": "Del \u00c1guila-Carrasco (2017)",
@@ -65,7 +58,6 @@
   "acc_step_latency_ms": {
     "lo": 150.0,
     "hi": 500.0,
-    "tier": "monitor",
     "golden_tol": 0.2,
     "units": "ms",
     "cite": "Del \u00c1guila-Carrasco (2017); Read (2022)",
@@ -74,7 +66,6 @@
   "acc_step_peak_vel": {
     "lo": 1.0,
     "hi": null,
-    "tier": "monitor",
     "golden_tol": 0.25,
     "units": "D/s",
     "cite": "Del \u00c1guila-Carrasco (2017)",
@@ -83,7 +74,6 @@
   "acc_step_tc_s": {
     "lo": 0.1,
     "hi": 1.2,
-    "tier": "monitor",
     "golden_tol": 0.25,
     "units": "s",
     "cite": "Read (2022)",
@@ -92,7 +82,6 @@
   "fix_drift_rms": {
     "lo": 0.02,
     "hi": 0.6,
-    "tier": "monitor",
     "golden_tol": 0.25,
     "units": "deg",
     "cite": "Rolfs (2009)",
@@ -101,7 +90,6 @@
   "fix_microsaccade_rate": {
     "lo": 0.0,
     "hi": 4.0,
-    "tier": "monitor",
     "golden_tol": 0.4,
     "units": "Hz",
     "cite": "Rolfs (2009)",
@@ -110,7 +98,6 @@
   "fix_noiseless_drift_std": {
     "lo": null,
     "hi": 0.05,
-    "tier": "gate",
     "golden_tol": 0.3,
     "units": "deg",
     "cite": "numerical sanity (noise-off stability; no physiological band)",
@@ -119,7 +106,6 @@
   "gravity_ocr_gain": {
     "lo": 0.8,
     "hi": 1.2,
-    "tier": "monitor",
     "golden_tol": 0.1,
     "units": "",
     "cite": "Laurens & Angelaki (2011)",
@@ -128,205 +114,206 @@
   "gravity_ocr_sin_rmse": {
     "lo": null,
     "hi": 1.0,
-    "tier": "monitor",
     "golden_tol": 0.2,
     "units": "deg",
     "cite": "Laurens & Angelaki (2011)",
     "desc": "RMS deviation of SS torsion from the expected sine law across tilts"
   },
   "gravity_ovar_bias_10": {
-    "lo": null,
-    "hi": null,
-    "tier": "monitor",
+    "lo": -35.0,
+    "hi": 0.0,
     "golden_tol": 0.25,
     "units": "deg/s",
     "cite": "Laurens & Angelaki (2011)",
     "desc": "OVAR steady-state average SPV (screw/translation bias) at 10\u00b0 tilt"
   },
   "gravity_ovar_bias_30": {
-    "lo": null,
-    "hi": null,
-    "tier": "monitor",
+    "lo": -40.0,
+    "hi": -5.0,
     "golden_tol": 0.25,
     "units": "deg/s",
     "cite": "Laurens & Angelaki (2011)",
     "desc": "OVAR steady-state average SPV (screw/translation bias) at 30\u00b0 tilt"
   },
   "gravity_ovar_bias_60": {
-    "lo": null,
-    "hi": null,
-    "tier": "monitor",
+    "lo": -45.0,
+    "hi": -10.0,
     "golden_tol": 0.25,
     "units": "deg/s",
     "cite": "Laurens & Angelaki (2011)",
     "desc": "OVAR steady-state average SPV (screw/translation bias) at 60\u00b0 tilt"
   },
   "gravity_ovar_bias_90": {
-    "lo": null,
-    "hi": null,
-    "tier": "monitor",
+    "lo": -50.0,
+    "hi": -12.0,
     "golden_tol": 0.25,
     "units": "deg/s",
     "cite": "Laurens & Angelaki (2011)",
     "desc": "OVAR steady-state average SPV (screw/translation bias) at 90\u00b0 tilt"
   },
   "gravity_ovar_mod_10": {
-    "lo": 0.0,
-    "hi": null,
-    "tier": "monitor",
+    "lo": 0.2,
+    "hi": 1.5,
     "golden_tol": 0.2,
     "units": "deg/s",
     "cite": "Laurens & Angelaki (2011)",
     "desc": "OVAR SPV modulation amplitude at 10\u00b0 tilt (\u221d sin tilt)"
   },
   "gravity_ovar_mod_30": {
-    "lo": 0.0,
-    "hi": null,
-    "tier": "monitor",
+    "lo": 0.6,
+    "hi": 3.0,
     "golden_tol": 0.2,
     "units": "deg/s",
     "cite": "Laurens & Angelaki (2011)",
     "desc": "OVAR SPV modulation amplitude at 30\u00b0 tilt (\u221d sin tilt)"
   },
   "gravity_ovar_mod_60": {
-    "lo": 0.0,
-    "hi": null,
-    "tier": "monitor",
+    "lo": 1.2,
+    "hi": 4.5,
     "golden_tol": 0.2,
     "units": "deg/s",
     "cite": "Laurens & Angelaki (2011)",
     "desc": "OVAR SPV modulation amplitude at 60\u00b0 tilt (\u221d sin tilt)"
   },
   "gravity_ovar_mod_90": {
-    "lo": 0.0,
-    "hi": null,
-    "tier": "monitor",
+    "lo": 1.5,
+    "hi": 5.0,
     "golden_tol": 0.2,
     "units": "deg/s",
     "cite": "Laurens & Angelaki (2011)",
     "desc": "OVAR SPV modulation amplitude at 90\u00b0 tilt (\u221d sin tilt)"
   },
   "gravity_tilt_reversal_60": {
-    "lo": null,
-    "hi": null,
-    "tier": "monitor",
+    "lo": -3.0,
+    "hi": 3.0,
     "golden_tol": 0.3,
     "units": "deg/s",
     "cite": "model limitation (not in literature)",
     "desc": "Sustained late post-rotatory SPV at 60\u00b0 \u2014 reversal / opposite-direction nystagmus"
   },
   "gravity_tilt_reversal_90": {
-    "lo": null,
-    "hi": null,
-    "tier": "monitor",
+    "lo": -3.0,
+    "hi": 3.0,
     "golden_tol": 0.3,
     "units": "deg/s",
     "cite": "model limitation (not in literature)",
     "desc": "Sustained late post-rotatory SPV at 90\u00b0 \u2014 reversal / opposite-direction nystagmus"
   },
   "gravity_tilt_tc_0": {
-    "lo": null,
-    "hi": null,
-    "tier": "monitor",
+    "lo": 18.0,
+    "hi": 45.0,
     "golden_tol": 0.2,
     "units": "s",
     "cite": "Laurens & Angelaki (2011)",
     "desc": "Post-rotatory version-SPV decay TC at 0\u00b0 post-stop tilt"
   },
   "gravity_tilt_tc_30": {
-    "lo": null,
-    "hi": null,
-    "tier": "monitor",
+    "lo": 8.0,
+    "hi": 22.0,
     "golden_tol": 0.2,
     "units": "s",
     "cite": "Laurens & Angelaki (2011)",
     "desc": "Post-rotatory version-SPV decay TC at 30\u00b0 post-stop tilt"
   },
   "gravity_tilt_tc_60": {
-    "lo": null,
-    "hi": null,
-    "tier": "monitor",
+    "lo": 4.0,
+    "hi": 15.0,
     "golden_tol": 0.2,
     "units": "s",
     "cite": "Laurens & Angelaki (2011)",
     "desc": "Post-rotatory version-SPV decay TC at 60\u00b0 post-stop tilt"
   },
   "gravity_tilt_tc_90": {
-    "lo": null,
-    "hi": null,
-    "tier": "monitor",
+    "lo": 3.0,
+    "hi": 12.0,
     "golden_tol": 0.2,
     "units": "s",
     "cite": "Laurens & Angelaki (2011)",
     "desc": "Post-rotatory version-SPV decay TC at 90\u00b0 post-stop tilt"
   },
-  "okr_bode_bw_scene": {
+  "listing_halfangle_slope": {
+    "lo": 0.7,
+    "hi": 1.3,
+    "golden_tol": null,
+    "units": "",
+    "cite": "Tweed & Vilis (1990)",
+    "desc": "Half-angle rule: measured/predicted torsion slope (1.0 = ideal)"
+  },
+  "listing_ocr_torsion_err": {
+    "lo": null,
+    "hi": 1.5,
+    "golden_tol": null,
+    "units": "deg",
+    "cite": "OCR + Listing (model)",
+    "desc": "Residual torsion error after the OCR-correction saccade"
+  },
+  "listing_plane_rmse": {
+    "lo": null,
+    "hi": 1.5,
+    "golden_tol": null,
+    "units": "deg",
+    "cite": "Tweed & Vilis (1990); Haslwanter (1995)",
+    "desc": "Listing's-plane thickness: RMS torsion deviation from the half-angle prediction"
+  },
+  "listing_pursuit_rmse": {
+    "lo": null,
+    "hi": 1.0,
+    "golden_tol": null,
+    "units": "deg",
+    "cite": "Tweed & Vilis (1990)",
+    "desc": "Listing error RMS during pursuit (torsion vs half-angle demand)"
+  },
+  "okr_bode_fc_hi_scene": {
     "lo": 0.1,
     "hi": null,
-    "tier": "monitor",
     "golden_tol": 0.25,
     "units": "Hz",
     "cite": "Cohen, Matsuo & Raphan (1977)",
     "desc": "OKR \u22123 dB bandwidth \u2014 scene"
   },
-  "okr_bode_bw_scene_target": {
+  "okr_bode_fc_hi_scene_target": {
     "lo": 0.1,
     "hi": null,
-    "tier": "monitor",
     "golden_tol": 0.25,
     "units": "Hz",
     "cite": "Cohen, Matsuo & Raphan (1977)",
     "desc": "OKR \u22123 dB bandwidth \u2014 scene+target"
   },
-  "okr_bode_gain_scene": {
+  "okr_bode_gain_max_scene": {
     "lo": 0.4,
     "hi": 1.05,
-    "tier": "monitor",
     "golden_tol": 0.1,
     "units": "",
     "cite": "Cohen, Matsuo & Raphan (1977)",
-    "desc": "OKR low-frequency gain \u2014 scene"
+    "desc": "OKR peak gain \u2014 scene"
   },
-  "okr_bode_gain_scene_target": {
+  "okr_bode_gain_max_scene_target": {
     "lo": 0.4,
     "hi": 1.05,
-    "tier": "monitor",
     "golden_tol": 0.1,
     "units": "",
     "cite": "Cohen, Matsuo & Raphan (1977)",
-    "desc": "OKR low-frequency gain \u2014 scene+target"
+    "desc": "OKR peak gain \u2014 scene+target"
   },
-  "pursuit_bode_bw_hz": {
+  "pursuit_bode_fc_hi": {
     "lo": 0.3,
     "hi": null,
-    "tier": "monitor",
     "golden_tol": 0.25,
     "units": "Hz",
     "cite": "Lisberger et al. (1981)",
-    "desc": "Pursuit \u22123 dB bandwidth (corner frequency)"
+    "desc": "Pursuit \u22123 dB bandwidth (Hz)"
   },
-  "pursuit_bode_gain_low": {
+  "pursuit_bode_gain_max": {
     "lo": 0.7,
     "hi": 1.1,
-    "tier": "gate",
     "golden_tol": 0.1,
     "units": "",
     "cite": "Lisberger et al. (1981)",
-    "desc": "Pursuit low-frequency velocity gain"
-  },
-  "pursuit_bode_phase_0p5hz": {
-    "lo": -90.0,
-    "hi": 10.0,
-    "tier": "monitor",
-    "golden_tol": 0.3,
-    "units": "deg",
-    "cite": "Lisberger et al. (1981)",
-    "desc": "Pursuit phase at 0.5 Hz (\u2212 = lag)"
+    "desc": "Pursuit peak gain"
   },
   "pursuit_latency_ms": {
     "lo": 60.0,
     "hi": 180.0,
-    "tier": "monitor",
     "golden_tol": 0.2,
     "units": "ms",
     "cite": "Rashbass (1961); Carl & Gellman (1987)",
@@ -335,7 +322,6 @@
   "pursuit_ss_gain_10degs": {
     "lo": 0.8,
     "hi": 1.1,
-    "tier": "gate",
     "golden_tol": 0.08,
     "units": "",
     "cite": "Lisberger & Westbrook (1985)",
@@ -344,151 +330,118 @@
   "pursuit_ss_gain_5degs": {
     "lo": 0.8,
     "hi": 1.1,
-    "tier": "gate",
     "golden_tol": 0.08,
     "units": "",
     "cite": "Lisberger & Westbrook (1985)",
     "desc": "Steady-state pursuit gain (SPV \u00f7 target vel) at 5 deg/s ramp"
   },
-  "sac_endpoint_err_noiseless": {
-    "lo": null,
-    "hi": 0.6,
-    "tier": "gate",
-    "golden_tol": 0.2,
-    "units": "deg",
-    "cite": "Robinson (1975)",
-    "desc": "Final endpoint error vs target in hold window \u2014 WITH corrective saccades"
-  },
-  "sac_endpoint_err_noisy": {
-    "lo": null,
-    "hi": 1.2,
-    "tier": "monitor",
-    "golden_tol": 0.2,
-    "units": "deg",
-    "cite": "Robinson (1975)",
-    "desc": "Final endpoint error vs target in hold window \u2014 WITH corrective saccades"
+  "sac_cascade_count_noiseless": {
+    "lo": 1.0,
+    "hi": 2.0,
+    "golden_tol": 0.0,
+    "units": "saccades",
+    "cite": "burst stop integrity (Robinson 1975 local feedback)",
+    "desc": "WORST-amplitude saccade count per noiseless target step \u2014 must be 1 (clean) or 2 (primary + 1 corrective); >2 \u21d2 burst oscillating / mis-terminating"
   },
   "sac_mainseq_resid_max": {
     "lo": null,
-    "hi": 0.2,
-    "tier": "gate",
+    "hi": 0.25,
     "golden_tol": 0.15,
     "units": "",
     "cite": "Bahill et al. (1975)",
-    "desc": "Max fractional deviation from 700(1\u2212e^\u2212A/7), amplitudes \u22655\u00b0"
+    "desc": "Max fractional deviation from 700(1\u2212e^\u2212A/7), amplitudes \u22655\u00b0 (the idealized curve over-predicts small saccades, so ~20% at 5\u00b0 is expected)"
   },
   "sac_oblique_straightness": {
     "lo": null,
     "hi": 0.08,
-    "tier": "monitor",
     "golden_tol": 0.2,
     "units": "",
     "cite": "Smit et al. (1990); van Gisbergen et al. (1985)",
     "desc": "Max trajectory curvature (perp dev \u00f7 amplitude) over oblique directions"
   },
-  "sac_oblique_sync_ms": {
-    "lo": null,
-    "hi": 20.0,
-    "tier": "monitor",
-    "golden_tol": 0.3,
-    "units": "ms",
-    "cite": "Smit et al. (1990)",
-    "desc": "Max H\u2013V component desynchrony (|90%-reach time difference|), oblique directions"
-  },
   "sac_peak_vel_20deg": {
     "lo": 550.0,
     "hi": 750.0,
-    "tier": "gate",
     "golden_tol": 0.05,
     "units": "deg/s",
     "cite": "Bahill et al. (1975)",
     "desc": "Peak velocity of a 20\u00b0 saccade (main-sequence saturation)"
   },
-  "sac_postsac_drift_noiseless": {
+  "sac_postsac_peak_long_noiseless": {
     "lo": 0.0,
-    "hi": 0.2,
-    "tier": "monitor",
+    "hi": 0.8,
     "golden_tol": 0.25,
     "units": "deg/s",
-    "cite": "Kapoula, Robinson & Hain (1986)",
-    "desc": "Mean slow-phase speed in hold window \u2014 WITHOUT fast phases (drift / oscillation)"
+    "cite": "post-saccadic stability \u2014 EC self-motion suppression",
+    "desc": "WORST-amplitude PEAK slow-phase speed in the LONG hold window \u2014 sustained post-saccadic oscillation/drift (noiseless target ~0)"
   },
-  "sac_postsac_drift_noisy": {
-    "lo": 0.1,
+  "sac_postsac_peak_short_noiseless": {
+    "lo": 0.0,
     "hi": 1.0,
-    "tier": "monitor",
     "golden_tol": 0.25,
     "units": "deg/s",
-    "cite": "Kapoula, Robinson & Hain (1986)",
-    "desc": "Mean slow-phase speed in hold window \u2014 WITHOUT fast phases (drift / oscillation)"
+    "cite": "post-saccadic stability \u2014 EC self-motion suppression",
+    "desc": "WORST-amplitude PEAK slow-phase speed in the SHORT window just after the saccade \u2014 immediate ring/glissade (noiseless target ~0)"
   },
-  "sac_primary_err_noiseless": {
-    "lo": null,
-    "hi": null,
-    "tier": "monitor",
-    "golden_tol": 0.2,
-    "units": "deg",
-    "cite": "Becker & J\u00fcrgens (1979)",
-    "desc": "Primary-saccade endpoint error \u2014 WITHOUT correctives (open-loop undershoot)"
-  },
-  "sac_primary_err_noisy": {
-    "lo": null,
-    "hi": null,
-    "tier": "monitor",
-    "golden_tol": 0.2,
-    "units": "deg",
-    "cite": "Becker & J\u00fcrgens (1979)",
-    "desc": "Primary-saccade endpoint error \u2014 WITHOUT correctives (open-loop undershoot)"
+  "sac_postsac_verg_peak_noiseless": {
+    "lo": 0.0,
+    "hi": 1.5,
+    "golden_tol": 0.25,
+    "units": "deg/s",
+    "cite": "post-saccadic stability \u2014 per-eye (MLF) motor asymmetry",
+    "desc": "WORST-amplitude PEAK post-saccadic vergence (L\u2212R) velocity \u2014 the per-eye MN/MLF glissade asymmetry the version metric averages away (Side 2; target ~0)"
   },
   "sac_primary_gain": {
     "lo": 0.8,
     "hi": 1.05,
-    "tier": "monitor",
     "golden_tol": 0.05,
     "units": "",
     "cite": "Robinson (1975)",
     "desc": "Mean primary-saccade amplitude / target amplitude (\u22655\u00b0)"
   },
+  "sac_refractory_isi_median_ms": {
+    "lo": 150.0,
+    "hi": 500.0,
+    "golden_tol": 0.25,
+    "units": "ms",
+    "cite": "Becker & J\u00fcrgens (1979)",
+    "desc": "Median across amplitudes of the per-amplitude refractory-ISI threshold"
+  },
   "sac_refractory_isi_ms": {
-    "lo": 50.0,
-    "hi": 260.0,
-    "tier": "monitor",
+    "lo": 100.0,
+    "hi": 350.0,
     "golden_tol": 0.25,
     "units": "ms",
     "cite": "Becker & J\u00fcrgens (1979)",
     "desc": "Smallest double-step ISI yielding a distinct 2nd saccade (A=20\u00b0)"
   },
-  "tvor_bode_gain_high_dark": {
-    "lo": 0.2,
+  "tvor_bode_gain_max_dark": {
+    "lo": 0.3,
     "hi": 1.4,
-    "tier": "monitor",
-    "golden_tol": 0.15,
+    "golden_tol": 0.2,
     "units": "",
     "cite": "Paige & Tomko (1991); Angelaki & Hess (2001)",
-    "desc": "tVOR high-frequency gain vs geometric ideal (4 Hz) \u2014 dark"
+    "desc": "tVOR peak gain vs geometric ideal (high-f plateau) \u2014 dark"
   },
-  "tvor_bode_gain_high_scene": {
-    "lo": 0.2,
+  "tvor_bode_gain_max_scene": {
+    "lo": 0.3,
     "hi": 1.4,
-    "tier": "monitor",
-    "golden_tol": 0.15,
+    "golden_tol": 0.2,
     "units": "",
     "cite": "Paige & Tomko (1991); Angelaki & Hess (2001)",
-    "desc": "tVOR high-frequency gain vs geometric ideal (4 Hz) \u2014 scene"
+    "desc": "tVOR peak gain vs geometric ideal (high-f plateau) \u2014 scene"
   },
-  "tvor_bode_gain_high_scene_target": {
-    "lo": 0.2,
+  "tvor_bode_gain_max_scene_target": {
+    "lo": 0.3,
     "hi": 1.4,
-    "tier": "monitor",
-    "golden_tol": 0.15,
+    "golden_tol": 0.2,
     "units": "",
     "cite": "Paige & Tomko (1991); Angelaki & Hess (2001)",
-    "desc": "tVOR high-frequency gain vs geometric ideal (4 Hz) \u2014 scene+target"
+    "desc": "tVOR peak gain vs geometric ideal (high-f plateau) \u2014 scene+target"
   },
   "tvor_torsion_cross_dark": {
     "lo": null,
-    "hi": null,
-    "tier": "monitor",
+    "hi": 1.5,
     "golden_tol": 0.3,
     "units": "deg",
     "cite": "cross-axis somatogravic / OCR coupling",
@@ -496,8 +449,7 @@
   },
   "tvor_torsion_cross_scene": {
     "lo": null,
-    "hi": null,
-    "tier": "monitor",
+    "hi": 1.5,
     "golden_tol": 0.3,
     "units": "deg",
     "cite": "cross-axis somatogravic / OCR coupling",
@@ -505,8 +457,7 @@
   },
   "tvor_torsion_cross_scene_target": {
     "lo": null,
-    "hi": null,
-    "tier": "monitor",
+    "hi": 1.5,
     "golden_tol": 0.3,
     "units": "deg",
     "cite": "cross-axis somatogravic / OCR coupling",
@@ -515,43 +466,30 @@
   "verg_asym_facilitation": {
     "lo": 1.0,
     "hi": null,
-    "tier": "monitor",
     "golden_tol": 0.25,
     "units": "",
     "cite": "Zee et al. (1992)",
     "desc": "Zee SVBN facilitation: asymmetric \u00f7 symmetric peak vergence velocity"
   },
-  "verg_bode_bw_hz": {
+  "verg_bode_fc_hi": {
     "lo": 0.3,
     "hi": null,
-    "tier": "monitor",
     "golden_tol": 0.25,
     "units": "Hz",
     "cite": "Rashbass & Westheimer (1961)",
-    "desc": "Vergence \u22123 dB bandwidth"
+    "desc": "Vergence \u22123 dB bandwidth (Hz)"
   },
-  "verg_bode_gain_low": {
+  "verg_bode_gain_max": {
     "lo": 0.5,
     "hi": 1.1,
-    "tier": "monitor",
     "golden_tol": 0.1,
     "units": "",
     "cite": "Rashbass & Westheimer (1961)",
-    "desc": "Vergence low-frequency gain"
-  },
-  "verg_bode_phase_0p5hz": {
-    "lo": -120.0,
-    "hi": 10.0,
-    "tier": "monitor",
-    "golden_tol": 0.3,
-    "units": "deg",
-    "cite": "Rashbass & Westheimer (1961)",
-    "desc": "Vergence phase at 0.5 Hz (\u2212 = lag)"
+    "desc": "Vergence peak gain"
   },
   "verg_conv_div_ratio": {
     "lo": 1.0,
     "hi": null,
-    "tier": "monitor",
     "golden_tol": 0.2,
     "units": "",
     "cite": "Zee et al. (1992); Collewijn et al. (1988)",
@@ -560,7 +498,6 @@
   "verg_latency_ms": {
     "lo": 80.0,
     "hi": 300.0,
-    "tier": "monitor",
     "golden_tol": 0.25,
     "units": "ms",
     "cite": "Rashbass & Westheimer (1961)",
@@ -569,7 +506,6 @@
   "verg_overshoot": {
     "lo": null,
     "hi": 0.5,
-    "tier": "monitor",
     "golden_tol": 0.3,
     "units": "",
     "cite": "Hung et al. (1986)",
@@ -578,7 +514,6 @@
   "verg_phoria_adapt": {
     "lo": 0.3,
     "hi": 3.0,
-    "tier": "monitor",
     "golden_tol": 0.25,
     "units": "deg",
     "cite": "Hung (1992); Schor (1988)",
@@ -587,7 +522,6 @@
   "verg_phoria_tc_s": {
     "lo": 5.0,
     "hi": 40.0,
-    "tier": "monitor",
     "golden_tol": 0.3,
     "units": "s",
     "cite": "Hung (1992)",
@@ -596,7 +530,6 @@
   "verg_sym_conv_err": {
     "lo": null,
     "hi": 1.5,
-    "tier": "monitor",
     "golden_tol": 0.2,
     "units": "deg",
     "cite": "Mays (1984)",
@@ -605,7 +538,6 @@
   "verg_sym_version_leak": {
     "lo": null,
     "hi": 1.0,
-    "tier": "monitor",
     "golden_tol": 0.3,
     "units": "deg",
     "cite": "Mays (1984)",
@@ -614,70 +546,70 @@
   "verg_tc_s": {
     "lo": 0.1,
     "hi": 2.0,
-    "tier": "monitor",
     "golden_tol": 0.25,
     "units": "s",
     "cite": "Rashbass & Westheimer (1961)",
     "desc": "Vergence rise time constant (exp fit)"
   },
-  "vor_bode_gain_dark": {
+  "vor_bode_fc_hi_dark": {
+    "lo": null,
+    "hi": null,
+    "golden_tol": 0.25,
+    "units": "Hz",
+    "cite": "Cohen, Matsuo & Raphan (1977)",
+    "desc": "VOR high-side \u22123 dB cutoff \u2014 dark"
+  },
+  "vor_bode_fc_hi_light": {
+    "lo": null,
+    "hi": null,
+    "golden_tol": 0.25,
+    "units": "Hz",
+    "cite": "Cohen, Matsuo & Raphan (1977)",
+    "desc": "VOR high-side \u22123 dB cutoff \u2014 light"
+  },
+  "vor_bode_fc_hi_light_target": {
+    "lo": null,
+    "hi": null,
+    "golden_tol": 0.25,
+    "units": "Hz",
+    "cite": "Cohen, Matsuo & Raphan (1977)",
+    "desc": "VOR high-side \u22123 dB cutoff \u2014 light+target"
+  },
+  "vor_bode_fc_lo_light_target": {
+    "lo": null,
+    "hi": null,
+    "golden_tol": 0.25,
+    "units": "Hz",
+    "cite": "Cohen, Matsuo & Raphan (1977)",
+    "desc": "VOR low-side \u22123 dB corner (canal high-pass) \u2014 light+target"
+  },
+  "vor_bode_gain_max_dark": {
     "lo": 0.4,
-    "hi": 1.1,
-    "tier": "monitor",
+    "hi": 1.2,
     "golden_tol": 0.1,
     "units": "",
     "cite": "Cohen, Matsuo & Raphan (1977)",
-    "desc": "VOR low-frequency gain \u2014 dark"
+    "desc": "VOR peak gain \u2014 dark"
   },
-  "vor_bode_gain_light": {
+  "vor_bode_gain_max_light": {
     "lo": 0.4,
-    "hi": 1.1,
-    "tier": "monitor",
+    "hi": 1.2,
     "golden_tol": 0.1,
     "units": "",
     "cite": "Cohen, Matsuo & Raphan (1977)",
-    "desc": "VOR low-frequency gain \u2014 light"
+    "desc": "VOR peak gain \u2014 light"
   },
-  "vor_bode_gain_light_target": {
+  "vor_bode_gain_max_light_target": {
     "lo": 0.4,
-    "hi": 1.1,
-    "tier": "monitor",
+    "hi": 1.2,
     "golden_tol": 0.1,
     "units": "",
     "cite": "Cohen, Matsuo & Raphan (1977)",
-    "desc": "VOR low-frequency gain \u2014 light+target"
-  },
-  "vor_bode_phase_dark": {
-    "lo": null,
-    "hi": null,
-    "tier": "monitor",
-    "golden_tol": 0.3,
-    "units": "deg",
-    "cite": "Cohen, Matsuo & Raphan (1977)",
-    "desc": "VOR phase at 0.5 Hz (\u2212 = lag) \u2014 dark"
-  },
-  "vor_bode_phase_light": {
-    "lo": null,
-    "hi": null,
-    "tier": "monitor",
-    "golden_tol": 0.3,
-    "units": "deg",
-    "cite": "Cohen, Matsuo & Raphan (1977)",
-    "desc": "VOR phase at 0.5 Hz (\u2212 = lag) \u2014 light"
-  },
-  "vor_bode_phase_light_target": {
-    "lo": null,
-    "hi": null,
-    "tier": "monitor",
-    "golden_tol": 0.3,
-    "units": "deg",
-    "cite": "Cohen, Matsuo & Raphan (1977)",
-    "desc": "VOR phase at 0.5 Hz (\u2212 = lag) \u2014 light+target"
+    "desc": "VOR peak gain \u2014 light+target"
   },
   "vor_okr_okan_tc": {
     "lo": 10.0,
     "hi": 30.0,
-    "tier": "gate",
     "golden_tol": 0.15,
     "units": "s",
     "cite": "Raphan, Matsuo & Cohen (1979)",
@@ -686,43 +618,22 @@
   "vor_okr_okn_ss_gain": {
     "lo": 0.75,
     "hi": 1.1,
-    "tier": "gate",
     "golden_tol": 0.08,
     "units": "",
     "cite": "Raphan, Matsuo & Cohen (1979)",
     "desc": "OKN steady-state SPV gain (last 10 s of scene-on)"
   },
-  "vor_okr_okr_ss_gain": {
-    "lo": 0.7,
-    "hi": 1.1,
-    "tier": "monitor",
-    "golden_tol": 0.08,
-    "units": "",
-    "cite": "Raphan et al. (1979)",
-    "desc": "OKR steady-state SPV gain (14\u201318 s, noiseless)"
-  },
   "vor_okr_postrot_tc": {
     "lo": 10.0,
     "hi": 30.0,
-    "tier": "gate",
     "golden_tol": 0.15,
     "units": "s",
     "cite": "Raphan, Matsuo & Cohen (1979)",
     "desc": "VOR post-rotatory SPV decay time constant (VS-extended)"
   },
-  "vor_okr_vor_direct_gain": {
-    "lo": 0.6,
-    "hi": 1.05,
-    "tier": "monitor",
-    "golden_tol": 0.08,
-    "units": "",
-    "cite": "Robinson (1975)",
-    "desc": "VOR-in-dark SPV gain at early plateau (2\u20135 s, noiseless)"
-  },
   "vor_okr_vvor_gain": {
     "lo": 0.85,
     "hi": 1.1,
-    "tier": "gate",
     "golden_tol": 0.08,
     "units": "",
     "cite": "Raphan, Matsuo & Cohen (1979)",

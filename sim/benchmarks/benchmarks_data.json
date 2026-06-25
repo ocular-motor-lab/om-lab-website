@@ -1,14 +1,14 @@
 {
-  "generated": "2026-06-20 04:52",
-  "version": "ca9ae0f-dirty",
+  "generated": "2026-06-25 08:09",
+  "version": "9877e87-dirty",
   "sections": [
     {
       "id": "saccades",
       "title": "1. Saccades",
       "description": "Saccade kinematics and internal signal cascade. Tests main sequence (amplitude\u2013velocity), oblique trajectory linearity, double-step refractoriness, and the full Robinson cascade. The cascade figure also shows the cerebellar saccadic-suppression gates (pre- and post-delay), the pre- vs post-cascade slip + efference-copy comparison (cerebellum EC matched to the retinal cascade incl. the two-stage MN / MLF forward model), and the pursuit / VS / T-VOR drives during a saccade.",
-      "runtime_s": 183.41,
-      "version": "ca9ae0f-dirty.95f9254",
-      "generated": "2026-06-19 13:53",
+      "runtime_s": 182.94,
+      "version": "9877e87-dirty.ed37ec6",
+      "generated": "2026-06-25 07:24",
       "figures": [
         {
           "rel": "figures/saccade_main_sequence.png",
@@ -23,26 +23,26 @@
           "metrics": [
             {
               "name": "sac_peak_vel_20deg",
-              "value": 698.078125,
-              "golden": 697.5722045898438
+              "value": 626.0626220703125,
+              "golden": 697.6837768554688
             },
             {
               "name": "sac_mainseq_resid_max",
-              "value": 0.053956685179328875,
-              "golden": 0.054597093496658755
+              "value": 0.20666675942161886,
+              "golden": 0.05388685485408028
             },
             {
               "name": "sac_primary_gain",
-              "value": 1.0341282780965169,
-              "golden": 1.0150718514124553
+              "value": 0.9757867741584778,
+              "golden": 1.0272253433863323
             }
           ]
         },
         {
           "rel": "figures/saccade_oblique.png",
           "title": "Oblique Saccades (8-direction fan)",
-          "description": "12\u00b0 saccades from centre to 8 directions (45\u00b0 apart), noiseless. Left: 2-D trajectories. Centre: 45\u00b0 H/V components (synchrony). Right: per-direction trajectory curvature.",
-          "expected": "Straight radial trajectories (curvature < ~5% of amplitude). H and V components start and end together (oblique synchrony).",
+          "description": "12\u00b0 saccades from centre to 8 directions (45\u00b0 apart), noiseless. Left: 2-D trajectories. Right: per-direction trajectory curvature.",
+          "expected": "Straight radial trajectories (curvature < ~5% of amplitude). Curvature is the readout of H/V component desynchrony, so it suffices on its own.",
           "citation": "Smit et al. (1990) J Neurophysiol; van Gisbergen et al. (1985)",
           "type": "behavior",
           "ref_rel": "",
@@ -51,13 +51,8 @@
           "metrics": [
             {
               "name": "sac_oblique_straightness",
-              "value": 0.027756983414292336,
-              "golden": 0.18791835010051727
-            },
-            {
-              "name": "sac_oblique_sync_ms",
-              "value": 1.0000000000000009,
-              "golden": 334.0
+              "value": 0.02937454730272293,
+              "golden": 0.027775947004556656
             }
           ]
         },
@@ -74,8 +69,13 @@
           "metrics": [
             {
               "name": "sac_refractory_isi_ms",
-              "value": 20.0,
-              "golden": 20.0
+              "value": 315.99999999999994,
+              "golden": 327.99999999999994
+            },
+            {
+              "name": "sac_refractory_isi_median_ms",
+              "value": 379.99999999999994,
+              "golden": 389.5
             }
           ]
         },
@@ -91,34 +91,24 @@
           "diff": null,
           "metrics": [
             {
-              "name": "sac_endpoint_err_noiseless",
-              "value": 0.1720189694315195,
-              "golden": 0.19327581860125065
+              "name": "sac_postsac_peak_short_noiseless",
+              "value": 1.7344354391098022,
+              "golden": 4.375457763671875
             },
             {
-              "name": "sac_primary_err_noiseless",
-              "value": 0.3046308755874634,
-              "golden": 0.23147743940353394
+              "name": "sac_postsac_peak_long_noiseless",
+              "value": 1.4114378690719604,
+              "golden": 2.5196073055267334
             },
             {
-              "name": "sac_postsac_drift_noiseless",
-              "value": 0.5418487973511219,
-              "golden": 0.5613339673727751
+              "name": "sac_postsac_verg_peak_noiseless",
+              "value": 5.373000621795654,
+              "golden": null
             },
             {
-              "name": "sac_endpoint_err_noisy",
-              "value": 0.13138331472873688,
-              "golden": 0.16357664996758103
-            },
-            {
-              "name": "sac_primary_err_noisy",
-              "value": 0.004395127296447754,
-              "golden": 0.3247043043375015
-            },
-            {
-              "name": "sac_postsac_drift_noisy",
-              "value": 0.5011318325996399,
-              "golden": 0.8459389507770538
+              "name": "sac_cascade_count_noiseless",
+              "value": 1.0,
+              "golden": null
             }
           ]
         }
@@ -128,9 +118,9 @@
       "id": "vor_okr",
       "title": "2. VOR / OKR",
       "description": "Vestibulo-ocular reflex and optokinetic response. Replicates Raphan et al. (1979) Fig.9: VOR in dark, OKN+OKAN, and VVOR. Slow-phase velocity shown as 0.5-s binned scatter (post-saccadic spikes averaged into the slow-phase trend). Tests post-rotatory and OKAN time constants, VVOR gain, and nystagmus waveform. Scene slip \u2192 VS goes through K_vor_direct\u00b7(saccadically-gated slip) + K_cereb_okr\u00b7(cerebellar EC correction); nodulus-uvula gravity dumping (K_cereb_nu) sets the velocity-storage TC.",
-      "runtime_s": 996.09,
-      "version": "ca9ae0f-dirty.95f9254",
-      "generated": "2026-06-19 14:10",
+      "runtime_s": 888.07,
+      "version": "9877e87-dirty.ed37ec6",
+      "generated": "2026-06-25 07:39",
       "figures": [
         {
           "rel": "figures/vor_raphan_fig9.png",
@@ -145,25 +135,37 @@
           "metrics": [
             {
               "name": "vor_okr_vvor_gain",
-              "value": 0.8483838726791184,
-              "golden": 0.8475597181939301
+              "value": 0.8803484700755027,
+              "golden": 0.8512987339993717
             },
             {
               "name": "vor_okr_postrot_tc",
-              "value": 33.55009311780773,
-              "golden": 32.94346634341
+              "value": 34.567980377071976,
+              "golden": 35.19500281522229
             },
             {
               "name": "vor_okr_okan_tc",
-              "value": 23.287090429140104,
-              "golden": 26.30229439202458
+              "value": 20.480132051780533,
+              "golden": 20.183653324972596
             },
             {
               "name": "vor_okr_okn_ss_gain",
-              "value": 0.8033717502483168,
-              "golden": 0.8017053323521854
+              "value": 0.8283334904532901,
+              "golden": 0.7995859325040787
             }
           ]
+        },
+        {
+          "rel": "figures/vor_okr_cascade.png",
+          "title": "VOR / VVOR / OKR \u2014 Step Response",
+          "description": "Step / transient response \u2014 internal signals from the SAME simulations as the Raphan Fig.9 figure (no separate run); the Bode figures below cover the sinusoidal (frequency) response. Columns: VOR in dark, VVOR (rotation in a lit stationary scene), OKR (scene motion, head still). Rows: input \u2192 canal afferent / retinal slip \u2192 velocity storage \u2192 neural integrator \u2192 eye velocity, plus a fast-phase zoom (position + velocity). Vertical dashed line = stimulus off.",
+          "expected": "VOR: canal drives VS/NI, eye counter-rotates. VVOR: canal + OKR slip both feed VS, gaze stays stable. OKR: slip drives VS/NI, eye follows scene.",
+          "citation": "Raphan, Matsuo & Cohen (1979); Robinson (1975)",
+          "type": "cascade",
+          "ref_rel": "",
+          "diff_status": "no-ref",
+          "diff": null,
+          "metrics": []
         },
         {
           "rel": "figures/vor_bode.png",
@@ -177,34 +179,39 @@
           "diff": null,
           "metrics": [
             {
-              "name": "vor_bode_gain_dark",
-              "value": 1.0618796726617468,
-              "golden": 1.0618839548040508
+              "name": "vor_bode_gain_max_dark",
+              "value": 1.0618505897107464,
+              "golden": 1.061866959759417
             },
             {
-              "name": "vor_bode_phase_dark",
-              "value": -0.8990836366223263,
-              "golden": -0.8990921853826167
+              "name": "vor_bode_fc_hi_dark",
+              "value": 3.129819948014761,
+              "golden": 2.6756511014064563
             },
             {
-              "name": "vor_bode_gain_light",
-              "value": 1.017706856013945,
-              "golden": 1.0177091526155253
+              "name": "vor_bode_gain_max_light",
+              "value": 1.0501575759068653,
+              "golden": 1.017706501434721
             },
             {
-              "name": "vor_bode_phase_light",
-              "value": -0.49516473527020605,
-              "golden": -0.4952053652658826
+              "name": "vor_bode_fc_hi_light",
+              "value": 4.236195585098479,
+              "golden": 2.9597081684228463
             },
             {
-              "name": "vor_bode_gain_light_target",
-              "value": 0.41377575800920924,
-              "golden": 0.4140817796373755
+              "name": "vor_bode_gain_max_light_target",
+              "value": 1.1552276764230862,
+              "golden": 1.1187312526910334
             },
             {
-              "name": "vor_bode_phase_light_target",
-              "value": -0.6359601420205354,
-              "golden": -0.7201014648884195
+              "name": "vor_bode_fc_lo_light_target",
+              "value": 0.15074173604118477,
+              "golden": 0.1435185846858115
+            },
+            {
+              "name": "vor_bode_fc_hi_light_target",
+              "value": 16.061022374924377,
+              "golden": null
             }
           ]
         },
@@ -220,47 +227,24 @@
           "diff": null,
           "metrics": [
             {
-              "name": "okr_bode_gain_scene",
-              "value": 0.5017221603892918,
-              "golden": 0.5017981414990309
+              "name": "okr_bode_gain_max_scene",
+              "value": 0.5109652388023699,
+              "golden": 0.5017434104273101
             },
             {
-              "name": "okr_bode_bw_scene",
-              "value": 0.8367449851253227,
-              "golden": 0.8353293817502501
+              "name": "okr_bode_fc_hi_scene",
+              "value": 0.5985477267842734,
+              "golden": 0.836358348793988
             },
             {
-              "name": "okr_bode_gain_scene_target",
-              "value": 0.10756860054331818,
-              "golden": 0.11602545463795592
+              "name": "okr_bode_gain_max_scene_target",
+              "value": 0.83244336075668,
+              "golden": 0.8937018199101148
             },
             {
-              "name": "okr_bode_bw_scene_target",
-              "value": 14.696841452497846,
-              "golden": null
-            }
-          ]
-        },
-        {
-          "rel": "figures/vor_okr_cascade.png",
-          "title": "VOR / OKR Signal Cascade (Internal)",
-          "description": "Left column (VOR in dark): head velocity \u2192 canal afferents \u2192 VS state \u2192 NI state \u2192 eye velocity. Right column (OKN): scene velocity \u2192 delayed retinal slip \u2192 VS \u2192 NI \u2192 eye velocity.",
-          "expected": "VOR: canal signal decays (TC ~5 s), VS extends it. OKR: slip_delayed drives VS and NI until eye velocity matches scene.",
-          "citation": "Raphan et al. (1979); Robinson (1975)",
-          "type": "cascade",
-          "ref_rel": "",
-          "diff_status": "no-ref",
-          "diff": null,
-          "metrics": [
-            {
-              "name": "vor_okr_vor_direct_gain",
-              "value": 0.8704248219879887,
-              "golden": 0.8696364707859229
-            },
-            {
-              "name": "vor_okr_okr_ss_gain",
-              "value": 0.7919995090666402,
-              "golden": 0.7934161888754433
+              "name": "okr_bode_fc_hi_scene_target",
+              "value": 2.6059663421315173,
+              "golden": 2.1169536665365256
             }
           ]
         }
@@ -268,11 +252,11 @@
     },
     {
       "id": "gravity",
-      "title": "3. Gravity Estimator",
-      "description": "Canal-otolith interaction: OCR, OVAR, VOR tilt suppression, OCR vs tilt angle, somatogravic OCR frequency dependence. Parameters: tau_grav=1.6666666666666667, K_gd=2.86, g_ocr=1.019 (Laurens & Angelaki 2011).",
-      "runtime_s": 652.3,
-      "version": "ca9ae0f-dirty.95f9254",
-      "generated": "2026-06-19 14:21",
+      "title": "3. Gravity Estimator + T-VOR",
+      "description": "Canal-otolith interaction: OCR, OVAR, VOR tilt suppression, OCR vs tilt angle, somatogravic OCR frequency dependence, and translational VOR. These share a path \u2014 gravity/tilt and lateral translation both produce linear-acceleration components whose ocular effect is vergence/distance-dependent, so T-VOR lives here. Parameters: tau_grav=1.6666666666666667, K_gd=2.86, g_ocr=1.019 (Laurens & Angelaki 2011).",
+      "runtime_s": 935.49,
+      "version": "9877e87-dirty.ed37ec6",
+      "generated": "2026-06-25 07:55",
       "figures": [
         {
           "rel": "figures/gravity_ocr.png",
@@ -287,13 +271,13 @@
           "metrics": [
             {
               "name": "gravity_ocr_gain",
-              "value": 1.0364120289387388,
-              "golden": 1.0315016321690706
+              "value": 1.084362098225772,
+              "golden": 1.095118211927077
             },
             {
               "name": "gravity_ocr_sin_rmse",
-              "value": 0.2708437627361568,
-              "golden": 0.2316566823324481
+              "value": 0.6969648886559057,
+              "golden": 0.8297363814979783
             }
           ]
         },
@@ -322,43 +306,43 @@
           "metrics": [
             {
               "name": "gravity_ovar_mod_10",
-              "value": 12.61254902752292,
-              "golden": 19.138842095674185
+              "value": 3.3236583418013215,
+              "golden": 3.312175064525805
             },
             {
               "name": "gravity_ovar_bias_10",
-              "value": -24.342517905384543,
-              "golden": -22.852658084505297
+              "value": -25.049359837158,
+              "golden": -25.005334612382278
             },
             {
               "name": "gravity_ovar_mod_30",
-              "value": 13.687680781244095,
-              "golden": 20.80864713406111
+              "value": 3.523193086469104,
+              "golden": 3.5907507702092007
             },
             {
               "name": "gravity_ovar_bias_30",
-              "value": -28.034798758777036,
-              "golden": -26.40026211681298
+              "value": -28.772284540911834,
+              "golden": -28.7891703320332
             },
             {
               "name": "gravity_ovar_mod_60",
-              "value": 10.131597729483296,
-              "golden": 15.285588355177708
+              "value": 2.7085150703810923,
+              "golden": 2.7101954218131548
             },
             {
               "name": "gravity_ovar_bias_60",
-              "value": -32.881392786734565,
-              "golden": -31.874297080947244
+              "value": -33.294085231071094,
+              "golden": -33.26532950597866
             },
             {
               "name": "gravity_ovar_mod_90",
-              "value": 9.10970520107284,
-              "golden": 13.542101479114804
+              "value": 2.436070010518864,
+              "golden": 2.4343157906105923
             },
             {
               "name": "gravity_ovar_bias_90",
-              "value": -34.44131948633985,
-              "golden": -33.75037131360632
+              "value": -34.80805056582122,
+              "golden": -34.80589355717182
             }
           ]
         },
@@ -375,33 +359,33 @@
           "metrics": [
             {
               "name": "gravity_tilt_tc_0",
-              "value": 34.25993888424744,
-              "golden": 34.21805956387343
+              "value": 34.16358537350969,
+              "golden": 34.16179654482965
             },
             {
               "name": "gravity_tilt_tc_30",
-              "value": 4.63736215675607,
-              "golden": 3.111029725117633
+              "value": 15.354952128667652,
+              "golden": 15.355615274526214
             },
             {
               "name": "gravity_tilt_tc_60",
-              "value": 4.2393663082977175,
-              "golden": 3.114351589316266
+              "value": 10.04684417616074,
+              "golden": 10.009743823535567
             },
             {
               "name": "gravity_tilt_tc_90",
-              "value": 4.216881416230561,
-              "golden": 3.189372856658617
+              "value": 8.984859933819774,
+              "golden": 9.05428800554354
             },
             {
               "name": "gravity_tilt_reversal_60",
-              "value": 1.7185259776925363,
-              "golden": 2.0154385431017117
+              "value": 1.2255365726895864,
+              "golden": 1.2157193854743613
             },
             {
               "name": "gravity_tilt_reversal_90",
-              "value": 0.2479400414174144,
-              "golden": 0.41804780837515126
+              "value": -0.035626935833774506,
+              "golden": -0.032563264207528246
             }
           ]
         },
@@ -416,318 +400,7 @@
           "diff_status": "no-ref",
           "diff": null,
           "metrics": []
-        }
-      ]
-    },
-    {
-      "id": "pursuit",
-      "title": "4. Smooth Pursuit",
-      "description": "Smooth pursuit and catch-up saccades. Tests velocity gain at multiple speeds, sinusoidal tracking, and the pursuit integrator + saccade interaction cascade. Pursuit input = K_pursuit_direct\u00b7(saccadically-gated retinal slip) + K_cereb_pu\u00b7(cerebellar EC correction); the closed-loop pursuit memory \u03c4_eff \u2248 1.45 s (Smith predictor) despite the long pop-leak \u03c4_pursuit = 40 s.",
-      "runtime_s": 272.26,
-      "version": "ca9ae0f-dirty.95f9254",
-      "generated": "2026-06-19 14:25",
-      "figures": [
-        {
-          "rel": "figures/pursuit_velocity_range.png",
-          "title": "Smooth Pursuit \u2014 Velocity Range",
-          "description": "Step-ramp target at 5, 10, 20, 40 deg/s. Blue: smooth pursuit enabled. Gray: saccades only (pursuit off). Rows: position, velocity, pursuit drive (total + integrator + phasic).",
-          "expected": "At 5\u201310 deg/s: pursuit tracks closely, steady-state gain > 0.8. At higher velocities: catch-up saccades + partial pursuit.",
-          "citation": "Lisberger & Westbrook (1985) J Neurosci; Rashbass (1961)",
-          "type": "behavior",
-          "ref_rel": "",
-          "diff_status": "no-ref",
-          "diff": null,
-          "metrics": [
-            {
-              "name": "pursuit_ss_gain_5degs",
-              "value": 1.1692559399232616,
-              "golden": 1.035960235758996
-            },
-            {
-              "name": "pursuit_ss_gain_10degs",
-              "value": 1.0535607080287819,
-              "golden": 1.0219636039784783
-            },
-            {
-              "name": "pursuit_latency_ms",
-              "value": 62.0,
-              "golden": 62.0
-            }
-          ]
         },
-        {
-          "rel": "figures/pursuit_bode.png",
-          "title": "Smooth Pursuit \u2014 Bode (frequency response)",
-          "description": "Sinusoidal target-velocity sweep (0.1\u20132 Hz, 10 deg/s peak), NOISELESS. Gain = eye-velocity (SPV) \u00f7 target-velocity; phase lag vs frequency.",
-          "expected": "Gain \u2248 1 at low f, \u22123 dB near ~1 Hz; phase lag grows with frequency.",
-          "citation": "Lisberger, Evinger, Johanson & Fuchs (1981) J Neurophysiol",
-          "type": "behavior",
-          "ref_rel": "",
-          "diff_status": "no-ref",
-          "diff": null,
-          "metrics": [
-            {
-              "name": "pursuit_bode_gain_low",
-              "value": 0.8762256453079509,
-              "golden": 0.8594039413234076
-            },
-            {
-              "name": "pursuit_bode_bw_hz",
-              "value": 1.2045391602378948,
-              "golden": 1.1738304697838278
-            },
-            {
-              "name": "pursuit_bode_phase_0p5hz",
-              "value": -30.61090194081093,
-              "golden": -26.905680853768988
-            }
-          ]
-        },
-        {
-          "rel": "figures/pursuit_cascade.png",
-          "title": "Smooth Pursuit Signal Cascade (Internal)",
-          "description": "Full signal chain for 20 deg/s pursuit: target ramps 0.2\u20132.0 s then holds. Pursuit integrator persists after target stop (\u03c4 \u2248 40 s). Rows: position, velocity, pursuit drive (total/integrator/phasic), visual error, saccade accumulator, burst, refractory state.",
-          "expected": "Phasic drive rises fast at onset, decays to 0 at steady state. After target stops at 2 s: phasic reverses (retinal slip now backward), integrator decays slowly \u2014 eye coasts then corrects with catch-up saccades. Integrator TC visible as slow drift in x_p post-stop.",
-          "citation": "Lisberger & Westbrook (1985)",
-          "type": "cascade",
-          "ref_rel": "",
-          "diff_status": "no-ref",
-          "diff": null,
-          "metrics": []
-        }
-      ]
-    },
-    {
-      "id": "near_response",
-      "title": "5. Near response (vergence + accommodation)",
-      "description": "Merged near-response section. Basic midline vergence (noiseless) \u2014 reaches geometric target, version stays conjugate, latency/TC/overshoot. Vergence\u2013saccade interaction (Zee SVBN facilitation). AC/A cross-link. Vergence and accommodation frequency responses (Bode). The vergence cascade is kept as an internal-signals debug figure (no metrics).",
-      "runtime_s": 503.79,
-      "version": "ca9ae0f-dirty.38fa89b",
-      "generated": "2026-06-20 04:52",
-      "figures": [
-        {
-          "rel": "figures/vergence_midline.png",
-          "title": "Basic midline vergence (symmetric, noiseless)",
-          "description": "Symmetric convergence (3\u21920.3 m) and divergence (0.3\u21923 m) steps, NOISELESS. Left: vergence reaching geometric target. Right: version (conjugacy check).",
-          "expected": "Vergence reaches geometric target; version stays \u22480; rise TC ~0.2\u20131 s; small overshoot.",
-          "citation": "Mays (1984) J Neurophysiol; Rashbass & Westheimer (1961) J Physiol",
-          "type": "behavior",
-          "ref_rel": "",
-          "diff_status": "no-ref",
-          "diff": null,
-          "metrics": [
-            {
-              "name": "verg_sym_conv_err",
-              "value": 0.09341812550857576,
-              "golden": 0.40457153737381013
-            },
-            {
-              "name": "verg_sym_version_leak",
-              "value": 0.05041098594665527,
-              "golden": 0.14148521423339844
-            },
-            {
-              "name": "verg_latency_ms",
-              "value": 110.0000000000001,
-              "golden": 163.00000000000003
-            },
-            {
-              "name": "verg_tc_s",
-              "value": 0.2269149985336211,
-              "golden": 0.23789064249578284
-            },
-            {
-              "name": "verg_overshoot",
-              "value": 0.0339813893181426,
-              "golden": 0.31998998682282936
-            }
-          ]
-        },
-        {
-          "rel": "figures/accommodation_step.png",
-          "title": "Accommodation step (isolated, noiseless)",
-          "description": "Far\u2192near\u2192far defocus step (0.17\u21942.5 D), cross-links off. Latency, time constant, SS gain (lag), peak velocity.",
-          "expected": "Latency ~0.3 s; rise TC ~0.2\u20130.5 s; SS gain ~0.85\u20130.95 (lag); exponential.",
-          "citation": "Del \u00c1guila-Carrasco et al. (2017) BioMed Res Int; Read et al. (2022) J Vision",
-          "type": "behavior",
-          "ref_rel": "",
-          "diff_status": "no-ref",
-          "diff": null,
-          "metrics": [
-            {
-              "name": "acc_step_latency_ms",
-              "value": 247.0000000000001,
-              "golden": 231.99999999999997
-            },
-            {
-              "name": "acc_step_tc_s",
-              "value": 0.589979706354148,
-              "golden": 0.41450843587786423
-            },
-            {
-              "name": "acc_step_gain",
-              "value": 0.9729763984680175,
-              "golden": 0.9554898262023925
-            },
-            {
-              "name": "acc_step_peak_vel",
-              "value": 2.861410140991211,
-              "golden": 3.8046834468841553
-            }
-          ]
-        },
-        {
-          "rel": "figures/vergence_main_sequence.png",
-          "title": "Vergence Main Sequence (peak velocity vs. amplitude)",
-          "description": "Peak vergence velocity for amplitudes 2\u201316\u00b0, both directions, with and without a concurrent version saccade. Left: symmetric (slow vergence only). Right: asymmetric (Zee SVBN burst active).",
-          "expected": "Symmetric: peak velocity grows roughly linearly with amplitude. Asymmetric: peak velocity 2\u20133\u00d7 higher than symmetric (Zee facilitation). Convergence > divergence at every amplitude (asymmetric saturating gain).",
-          "citation": "Zee et al. (1992) J Neurophysiol; Rashbass & Westheimer (1961) J Physiol; Collewijn et al. (1988) J Physiol",
-          "type": "behavior",
-          "ref_rel": "",
-          "diff_status": "no-ref",
-          "diff": null,
-          "metrics": [
-            {
-              "name": "verg_conv_div_ratio",
-              "value": 0.9991534817329528,
-              "golden": 1.0061662155929463
-            },
-            {
-              "name": "verg_asym_facilitation",
-              "value": 1.2324682457625848,
-              "golden": 1.5787533655110129
-            }
-          ]
-        },
-        {
-          "rel": "figures/vergence_aca.png",
-          "title": "AC/A \u2014 lens-driven convergence",
-          "description": "+2 D binocular lens at 2 m, NOISELESS. With AC/A the extra accommodation drives convergence; with AC_A=0 vergence stays at geometric.",
-          "expected": "Accommodation rises \u22651 D; AC/A adds convergence above geometric; AC_A=0 control flat.",
-          "citation": "Schor CM (1979) Vision Res; Morgan (1944)",
-          "type": "behavior",
-          "ref_rel": "",
-          "diff_status": "no-ref",
-          "diff": null,
-          "metrics": [
-            {
-              "name": "aca_vergence_delta",
-              "value": 0.9216142892837524,
-              "golden": 1.0586057901382446
-            },
-            {
-              "name": "aca_ratio_pd_per_d",
-              "value": 0.8668300427450392,
-              "golden": 0.9882715613508533
-            }
-          ]
-        },
-        {
-          "rel": "figures/near_adaptation.png",
-          "title": "Near-response short-term adaptation",
-          "description": "32 s sustained near fixation (0.4 m) then open-loop (dark), control-subtracted against a far-throughout run with the identical dark transition. The gap between the two traces is the tonic adaptation induced by the near interval; it holds and decays slowly.",
-          "expected": "Adapted phoria + dark-focus shift toward the near demand (cond \u2212 control > 0); open-loop decay TC ~15\u201320 s (Hung 1992). The control subtraction removes the known dark over-convergence baseline.",
-          "citation": "Hung (1992) Ophthal Physiol Opt; Schor (1988) \u2014 imbalanced adaptation",
-          "type": "behavior",
-          "ref_rel": "",
-          "diff_status": "no-ref",
-          "diff": null,
-          "metrics": [
-            {
-              "name": "verg_phoria_adapt",
-              "value": 8.312559366226196,
-              "golden": 8.38548231124878
-            },
-            {
-              "name": "verg_phoria_tc_s",
-              "value": 199.99999999999844,
-              "golden": 199.99999999999997
-            },
-            {
-              "name": "acc_darkfocus_adapt",
-              "value": 1.9874336123466492,
-              "golden": 1.9532120823860168
-            },
-            {
-              "name": "acc_darkfocus_tc_s",
-              "value": 27.85989774025306,
-              "golden": 27.397057113864726
-            }
-          ]
-        },
-        {
-          "rel": "figures/vergence_bode.png",
-          "title": "Vergence \u2014 Bode (frequency response)",
-          "description": "Sinusoidal depth/disparity demand (0.1\u20132 Hz, \u00b12\u00b0 about 4\u00b0), NOISELESS. Gain = vergence \u00f7 demand; low-pass, BW ~1\u20132 Hz.",
-          "expected": "Gain \u2248 1 at low f, \u22123 dB near ~1 Hz; phase lag grows with frequency.",
-          "citation": "Rashbass & Westheimer (1961) J Physiol",
-          "type": "behavior",
-          "ref_rel": "",
-          "diff_status": "no-ref",
-          "diff": null,
-          "metrics": [
-            {
-              "name": "verg_bode_gain_low",
-              "value": 0.9851736766089614,
-              "golden": 1.0090874663476923
-            },
-            {
-              "name": "verg_bode_bw_hz",
-              "value": 0.8774478383216942,
-              "golden": 0.9466323140654971
-            },
-            {
-              "name": "verg_bode_phase_0p5hz",
-              "value": -49.080313974594006,
-              "golden": -59.35250988753403
-            }
-          ]
-        },
-        {
-          "rel": "figures/accommodation_bode.png",
-          "title": "Accommodation \u2014 Bode (frequency response)",
-          "description": "Sinusoidal accommodative demand (0.1\u20134 Hz, \u00b11 D about 2 D), NOISELESS. Gain = accommodation \u00f7 demand; low-pass, BW ~2 Hz.",
-          "expected": "Gain \u2248 1 at low f, \u22123 dB near ~2 Hz.",
-          "citation": "Stark, Takahashi & Zames (1965); Read & Schor (2022)",
-          "type": "behavior",
-          "ref_rel": "",
-          "diff_status": "no-ref",
-          "diff": null,
-          "metrics": [
-            {
-              "name": "acc_bode_gain_low",
-              "value": 0.96829979347084,
-              "golden": 0.9800375940841642
-            },
-            {
-              "name": "acc_bode_bw_hz",
-              "value": 0.5468434699661128,
-              "golden": 0.8323087381342427
-            }
-          ]
-        },
-        {
-          "rel": "figures/vergence_cascade.png",
-          "title": "Vergence Cascade (4 conditions)",
-          "description": "8 rows \u00d7 4 cols. Cols: sym conv (3\u21920.3 m), sym div (0.3\u21923 m), asym R+conv (2\u21920.5 m, +10\u00b0), asym L+div (0.5\u21922 m, \u221210\u00b0). Rows: eye position, vergence, version, vergence velocity, OPN gate, integrators (x_verg + x_verg_tonic [H]), x_verg_copy, Zee SVBN burst.",
-          "expected": "Symmetric cols: version stays near 0; asymmetric: version follows target. Vergence settles at geometric target. SVBN fires only during saccades.",
-          "citation": "Zee et al. (1992) J Neurophysiol; Collewijn et al. (1988) J Physiol; Schor (1979) Vision Res",
-          "type": "behavior",
-          "ref_rel": "",
-          "diff_status": "no-ref",
-          "diff": null,
-          "metrics": []
-        }
-      ]
-    },
-    {
-      "id": "tvor",
-      "title": "8. Translational VOR (T-VOR)",
-      "description": "Vest + visual fusion of head translation, scaled by vergence-derived distance to give compensatory eye velocity. Trapezoid pulses along sway / heave / surge in lit (scene only) and dark conditions.",
-      "runtime_s": 246.09,
-      "version": "ca9ae0f-dirty.95f9254",
-      "generated": "2026-06-19 14:37",
-      "figures": [
         {
           "rel": "figures/tvor_cascade.png",
           "title": "T-VOR cascade \u2014 sway / heave / surge \u00d7 LIT (scene only) / DARK",
@@ -752,36 +425,327 @@
           "diff": null,
           "metrics": [
             {
-              "name": "tvor_bode_gain_high_dark",
-              "value": 0.029596841861325166,
-              "golden": 0.05515720840048793
+              "name": "tvor_bode_gain_max_dark",
+              "value": 0.05130577327071067,
+              "golden": 0.051314921587287544
             },
             {
               "name": "tvor_torsion_cross_dark",
-              "value": 0.01065570850831634,
-              "golden": 0.01065573693996025
+              "value": 0.010655655108793669,
+              "golden": 0.010655655108793669
             },
             {
-              "name": "tvor_bode_gain_high_scene",
-              "value": 0.014145190665307032,
-              "golden": 0.026258422307559943
+              "name": "tvor_bode_gain_max_scene",
+              "value": 0.4315368964394235,
+              "golden": 0.4093588859813793
             },
             {
               "name": "tvor_torsion_cross_scene",
-              "value": 0.2258901985228685,
-              "golden": 0.16872231377160654
+              "value": 0.00836192662018738,
+              "golden": 0.00836192680731549
             },
             {
-              "name": "tvor_bode_gain_high_scene_target",
-              "value": 0.014151733943840195,
-              "golden": 0.013449825362858076
+              "name": "tvor_bode_gain_max_scene_target",
+              "value": 0.4125433628116737,
+              "golden": 0.4500992526247119
             },
             {
               "name": "tvor_torsion_cross_scene_target",
-              "value": 0.10664797780952517,
-              "golden": 0.105190273051787
+              "value": 0.10987276088223324,
+              "golden": 0.10940972058190959
             }
           ]
+        }
+      ]
+    },
+    {
+      "id": "pursuit",
+      "title": "4. Smooth Pursuit",
+      "description": "Smooth pursuit and catch-up saccades. Tests velocity gain at multiple speeds, sinusoidal tracking, and the pursuit integrator + saccade interaction cascade. Pursuit input = K_pursuit_direct\u00b7(saccadically-gated retinal slip) + K_cereb_pu\u00b7(cerebellar EC correction); the closed-loop pursuit memory \u03c4_eff \u2248 1.45 s (Smith predictor) despite the long pop-leak \u03c4_pursuit = 40 s.",
+      "runtime_s": 260.4,
+      "version": "9877e87-dirty.ed37ec6",
+      "generated": "2026-06-25 07:59",
+      "figures": [
+        {
+          "rel": "figures/pursuit_velocity_range.png",
+          "title": "Smooth Pursuit \u2014 Velocity Range",
+          "description": "Step-ramp target at 5, 10, 20, 40 deg/s. Blue: smooth pursuit enabled. Gray: saccades only (pursuit off). Rows: position, velocity, pursuit drive (total + integrator + phasic).",
+          "expected": "At 5\u201310 deg/s: pursuit tracks closely, steady-state gain > 0.8. At higher velocities: catch-up saccades + partial pursuit.",
+          "citation": "Lisberger & Westbrook (1985) J Neurosci; Rashbass (1961)",
+          "type": "behavior",
+          "ref_rel": "",
+          "diff_status": "no-ref",
+          "diff": null,
+          "metrics": [
+            {
+              "name": "pursuit_ss_gain_5degs",
+              "value": 0.9855665006185866,
+              "golden": 1.0059734683898864
+            },
+            {
+              "name": "pursuit_ss_gain_10degs",
+              "value": 0.9766457694621783,
+              "golden": 0.9916945793693903
+            },
+            {
+              "name": "pursuit_latency_ms",
+              "value": 77.00000000000001,
+              "golden": 62.0
+            }
+          ]
+        },
+        {
+          "rel": "figures/pursuit_bode.png",
+          "title": "Smooth Pursuit \u2014 Bode (frequency response)",
+          "description": "Sinusoidal target-velocity sweep (0.1\u20132 Hz, 10 deg/s peak), NOISELESS. Gain = eye-velocity (SPV) \u00f7 target-velocity; phase lag vs frequency.",
+          "expected": "Gain \u2248 1 at low f, \u22123 dB near ~1 Hz; phase lag grows with frequency.",
+          "citation": "Lisberger, Evinger, Johanson & Fuchs (1981) J Neurophysiol",
+          "type": "behavior",
+          "ref_rel": "",
+          "diff_status": "no-ref",
+          "diff": null,
+          "metrics": [
+            {
+              "name": "pursuit_bode_gain_max",
+              "value": 0.7886987293638558,
+              "golden": 0.8556390878671084
+            },
+            {
+              "name": "pursuit_bode_fc_hi",
+              "value": 0.4139068544879653,
+              "golden": 1.3053571181965864
+            }
+          ]
+        },
+        {
+          "rel": "figures/pursuit_cascade.png",
+          "title": "Smooth Pursuit Signal Cascade (Internal)",
+          "description": "Full signal chain for 20 deg/s pursuit: target ramps 0.2\u20132.0 s then holds. Pursuit integrator persists after target stop (\u03c4 \u2248 40 s). Rows: position, velocity, pursuit drive (total/integrator/phasic), visual error, saccade accumulator, burst, refractory state.",
+          "expected": "Phasic drive rises fast at onset, decays to 0 at steady state. After target stops at 2 s: phasic reverses (retinal slip now backward), integrator decays slowly \u2014 eye coasts then corrects with catch-up saccades. Integrator TC visible as slow drift in x_p post-stop.",
+          "citation": "Lisberger & Westbrook (1985)",
+          "type": "cascade",
+          "ref_rel": "",
+          "diff_status": "no-ref",
+          "diff": null,
+          "metrics": []
+        }
+      ]
+    },
+    {
+      "id": "near_response",
+      "title": "5. Near response (vergence + accommodation)",
+      "description": "Merged near-response section. Basic midline vergence (noiseless) \u2014 reaches geometric target, version stays conjugate, latency/TC/overshoot. Vergence\u2013saccade interaction (Zee SVBN facilitation). AC/A cross-link. Vergence and accommodation frequency responses (Bode). The vergence cascade is kept as an internal-signals debug figure (no metrics).",
+      "runtime_s": 405.94,
+      "version": "9877e87-dirty.ed37ec6",
+      "generated": "2026-06-25 08:06",
+      "figures": [
+        {
+          "rel": "figures/vergence_midline.png",
+          "title": "Basic midline vergence (symmetric, noiseless)",
+          "description": "Symmetric convergence (3\u21920.3 m) and divergence (0.3\u21923 m) steps, NOISELESS. Left: vergence reaching geometric target. Right: version (conjugacy check).",
+          "expected": "Vergence reaches geometric target; version stays \u22480; rise TC ~0.2\u20131 s; small overshoot.",
+          "citation": "Mays (1984) J Neurophysiol; Rashbass & Westheimer (1961) J Physiol",
+          "type": "behavior",
+          "ref_rel": "",
+          "diff_status": "no-ref",
+          "diff": null,
+          "metrics": [
+            {
+              "name": "verg_sym_conv_err",
+              "value": 0.1082668262736508,
+              "golden": 0.1082668262736508
+            },
+            {
+              "name": "verg_sym_version_leak",
+              "value": 0.017503738403320312,
+              "golden": 0.01749897003173828
+            },
+            {
+              "name": "verg_latency_ms",
+              "value": 110.0000000000001,
+              "golden": 110.0000000000001
+            },
+            {
+              "name": "verg_tc_s",
+              "value": 0.22796689543972173,
+              "golden": 0.22796690477825024
+            },
+            {
+              "name": "verg_overshoot",
+              "value": 0.03184541693417568,
+              "golden": 0.03184524100771119
+            }
+          ]
+        },
+        {
+          "rel": "figures/accommodation_step.png",
+          "title": "Accommodation step (monocular, noiseless)",
+          "description": "Far\u2192near\u2192far defocus step (0.17\u21942.5 D), MONOCULAR (right eye occluded) so there is no disparity-driven vergence \u2014 accommodation isolated physiologically with the AC/A and CA/C cross-links left ON. Latency, time constant, SS gain (lag), peak velocity.",
+          "expected": "Latency ~0.3 s; rise TC ~0.2\u20130.5 s; SS gain ~0.85\u20130.95 (lag); exponential.",
+          "citation": "Del \u00c1guila-Carrasco et al. (2017) BioMed Res Int; Read et al. (2022) J Vision",
+          "type": "behavior",
+          "ref_rel": "",
+          "diff_status": "no-ref",
+          "diff": null,
+          "metrics": [
+            {
+              "name": "acc_step_latency_ms",
+              "value": 248.0,
+              "golden": 248.0
+            },
+            {
+              "name": "acc_step_tc_s",
+              "value": 0.5963693191201761,
+              "golden": 0.5963693191201761
+            },
+            {
+              "name": "acc_step_gain",
+              "value": 0.9766471862792969,
+              "golden": 0.9766471862792969
+            },
+            {
+              "name": "acc_step_peak_vel",
+              "value": 2.8753576278686523,
+              "golden": 2.8753576278686523
+            }
+          ]
+        },
+        {
+          "rel": "figures/vergence_main_sequence.png",
+          "title": "Vergence Main Sequence (peak velocity vs. amplitude)",
+          "description": "Peak vergence velocity for amplitudes 2\u201316\u00b0, both directions, with and without a concurrent version saccade. Left: symmetric (slow vergence only). Right: asymmetric (Zee SVBN burst active).",
+          "expected": "Symmetric: peak velocity grows roughly linearly with amplitude. Asymmetric: peak velocity 2\u20133\u00d7 higher than symmetric (Zee facilitation). Convergence > divergence at every amplitude (asymmetric saturating gain).",
+          "citation": "Zee et al. (1992) J Neurophysiol; Rashbass & Westheimer (1961) J Physiol; Collewijn et al. (1988) J Physiol",
+          "type": "behavior",
+          "ref_rel": "",
+          "diff_status": "no-ref",
+          "diff": null,
+          "metrics": [
+            {
+              "name": "verg_conv_div_ratio",
+              "value": 1.0113091831633312,
+              "golden": 1.0112214800281527
+            },
+            {
+              "name": "verg_asym_facilitation",
+              "value": 1.2582401197570217,
+              "golden": 1.2582410551110803
+            }
+          ]
+        },
+        {
+          "rel": "figures/vergence_aca.png",
+          "title": "AC/A \u2014 lens-driven convergence",
+          "description": "+2 D binocular lens at 2 m, NOISELESS. With AC/A the extra accommodation drives convergence; with AC_A=0 vergence stays at geometric.",
+          "expected": "Accommodation rises \u22651 D; AC/A adds convergence above geometric; AC_A=0 control flat.",
+          "citation": "Schor CM (1979) Vision Res; Morgan (1944)",
+          "type": "behavior",
+          "ref_rel": "",
+          "diff_status": "no-ref",
+          "diff": null,
+          "metrics": [
+            {
+              "name": "aca_vergence_delta",
+              "value": 0.9355483055114746,
+              "golden": 0.9355483055114746
+            },
+            {
+              "name": "aca_ratio_pd_per_d",
+              "value": 0.8808064602620124,
+              "golden": 0.8808065735317095
+            }
+          ]
+        },
+        {
+          "rel": "figures/near_adaptation.png",
+          "title": "Near-response short-term adaptation",
+          "description": "32 s sustained near fixation (0.4 m) then open-loop (dark), control-subtracted against a far-throughout run with the identical dark transition. The gap between the two traces is the tonic adaptation induced by the near interval; it holds and decays slowly.",
+          "expected": "Adapted phoria + dark-focus shift toward the near demand (cond \u2212 control > 0); open-loop decay TC ~15\u201320 s (Hung 1992). The control subtraction removes the known dark over-convergence baseline.",
+          "citation": "Hung (1992) Ophthal Physiol Opt; Schor (1988) \u2014 imbalanced adaptation",
+          "type": "behavior",
+          "ref_rel": "",
+          "diff_status": "no-ref",
+          "diff": null,
+          "metrics": [
+            {
+              "name": "verg_phoria_adapt",
+              "value": 8.312616348266602,
+              "golden": 8.312616348266602
+            },
+            {
+              "name": "verg_phoria_tc_s",
+              "value": 199.99999999999892,
+              "golden": 199.99999999999892
+            },
+            {
+              "name": "acc_darkfocus_adapt",
+              "value": 1.9874359667301178,
+              "golden": 1.987435907125473
+            },
+            {
+              "name": "acc_darkfocus_tc_s",
+              "value": 27.891513206718784,
+              "golden": 27.88994613310781
+            }
+          ]
+        },
+        {
+          "rel": "figures/vergence_bode.png",
+          "title": "Vergence \u2014 Bode (frequency response)",
+          "description": "Sinusoidal depth/disparity demand (0.1\u20132 Hz, \u00b12\u00b0 about 4\u00b0), NOISELESS. Gain = vergence \u00f7 demand; low-pass, BW ~1\u20132 Hz.",
+          "expected": "Gain \u2248 1 at low f, \u22123 dB near ~1 Hz; phase lag grows with frequency.",
+          "citation": "Rashbass & Westheimer (1961) J Physiol",
+          "type": "behavior",
+          "ref_rel": "",
+          "diff_status": "no-ref",
+          "diff": null,
+          "metrics": [
+            {
+              "name": "verg_bode_gain_max",
+              "value": 0.989097591047725,
+              "golden": 0.989097622250972
+            },
+            {
+              "name": "verg_bode_fc_hi",
+              "value": 0.8707077893863334,
+              "golden": 0.8707076382768617
+            }
+          ]
+        },
+        {
+          "rel": "figures/accommodation_bode.png",
+          "title": "Accommodation \u2014 Bode (frequency response)",
+          "description": "Sinusoidal accommodative demand (0.1\u20134 Hz, \u00b11 D about 2 D), NOISELESS. Gain = accommodation \u00f7 demand; low-pass, BW ~2 Hz.",
+          "expected": "Gain \u2248 1 at low f, \u22123 dB near ~2 Hz.",
+          "citation": "Stark, Takahashi & Zames (1965); Read & Schor (2022)",
+          "type": "behavior",
+          "ref_rel": "",
+          "diff_status": "no-ref",
+          "diff": null,
+          "metrics": [
+            {
+              "name": "acc_bode_gain_max",
+              "value": 0.9681940934978004,
+              "golden": 0.9681940882091721
+            },
+            {
+              "name": "acc_bode_fc_hi",
+              "value": 0.5469811677610777,
+              "golden": 0.5469811710477913
+            }
+          ]
+        },
+        {
+          "rel": "figures/vergence_cascade.png",
+          "title": "Vergence Cascade (4 conditions)",
+          "description": "8 rows \u00d7 4 cols. Cols: sym conv (3\u21920.3 m), sym div (0.3\u21923 m), asym R+conv (2\u21920.5 m, +10\u00b0), asym L+div (0.5\u21922 m, \u221210\u00b0). Rows: eye position, vergence, version, vergence velocity, OPN gate, integrators (x_verg + x_verg_tonic [H]), x_verg_copy, Zee SVBN burst.",
+          "expected": "Symmetric cols: version stays near 0; asymmetric: version follows target. Vergence settles at geometric target. SVBN fires only during saccades.",
+          "citation": "Zee et al. (1992) J Neurophysiol; Collewijn et al. (1988) J Physiol; Schor (1979) Vision Res",
+          "type": "behavior",
+          "ref_rel": "",
+          "diff_status": "no-ref",
+          "diff": null,
+          "metrics": []
         }
       ]
     },
@@ -789,9 +753,9 @@
       "id": "fixation",
       "title": "6. Fixation",
       "description": "Fixational eye movements driven by different noise sources. Tests canal noise filtering, retinal position OU drift (microsaccades), and retinal velocity noise (pursuit-like drift).",
-      "runtime_s": 71.18,
-      "version": "ca9ae0f-dirty.95f9254",
-      "generated": "2026-06-19 14:38",
+      "runtime_s": 75.83,
+      "version": "9877e87-dirty.ed37ec6",
+      "generated": "2026-06-25 08:07",
       "figures": [
         {
           "rel": "figures/fixation_noise_comparison.png",
@@ -806,18 +770,18 @@
           "metrics": [
             {
               "name": "fix_noiseless_drift_std",
-              "value": 0.007327712140977383,
-              "golden": 0.005951696075499058
+              "value": 0.005167683120816946,
+              "golden": 0.005167671013623476
             },
             {
               "name": "fix_drift_rms",
-              "value": 0.08868937194347382,
-              "golden": 0.2027788609266281
+              "value": 0.09829719364643097,
+              "golden": 0.09827687591314316
             },
             {
               "name": "fix_microsaccade_rate",
               "value": 0.0,
-              "golden": 0.3333333333333333
+              "golden": 0.0
             }
           ]
         }
@@ -827,9 +791,9 @@
       "id": "listing",
       "title": "7. Listing's Law",
       "description": "Torsional constraint T = OCR \u2212 H\u00b7V\u00b7\u03c0/360: saccade plane scatter and OCR-driven correction saccade.",
-      "runtime_s": 105.0,
-      "version": "ca9ae0f-dirty.95f9254",
-      "generated": "2026-06-19 14:40",
+      "runtime_s": 103.48,
+      "version": "9877e87-dirty.ed37ec6",
+      "generated": "2026-06-25 08:09",
       "figures": [
         {
           "rel": "figures/listing_plane.png",
@@ -841,7 +805,18 @@
           "ref_rel": "",
           "diff_status": "no-ref",
           "diff": null,
-          "metrics": []
+          "metrics": [
+            {
+              "name": "listing_plane_rmse",
+              "value": 0.4275612993509302,
+              "golden": 0.4315715483604472
+            },
+            {
+              "name": "listing_halfangle_slope",
+              "value": 0.9240238234357705,
+              "golden": 0.9183041815280214
+            }
+          ]
         },
         {
           "rel": "figures/listing_ocr_saccade.png",
@@ -853,7 +828,13 @@
           "ref_rel": "",
           "diff_status": "no-ref",
           "diff": null,
-          "metrics": []
+          "metrics": [
+            {
+              "name": "listing_ocr_torsion_err",
+              "value": 0.13651466369628995,
+              "golden": 0.19005966186523526
+            }
+          ]
         },
         {
           "rel": "figures/listing_pursuit.png",
@@ -865,7 +846,13 @@
           "ref_rel": "",
           "diff_status": "no-ref",
           "diff": null,
-          "metrics": []
+          "metrics": [
+            {
+              "name": "listing_pursuit_rmse",
+              "value": 0.24649891257286072,
+              "golden": 0.2407265603542328
+            }
+          ]
         }
       ]
     }

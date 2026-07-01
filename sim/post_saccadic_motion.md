@@ -39,18 +39,24 @@ needed to even see it.
 
 Noiseless, worst over 1/5/20/40°, fast phases masked:
 
-| metric | 2026-06-24 (golden) | 2026-06-25 (adopted) | band |
-|---|---:|---:|---:|
-| `sac_postsac_peak_short_noiseless` (immediate ring/glissade) | 4.4 | **1.73** | ≤1.0 |
-| `sac_postsac_peak_long_noiseless` (sustained tail) | 2.5 | **1.41** | ≤0.8 |
-| `sac_postsac_verg_peak_noiseless` (near-target vergence) | 5.37 | 5.37 | ≤1.5 |
+| metric | 2026-06-24 (golden) | 2026-06-25 (mn_ff=1.0) | 2026-06-26 (mlf_lead=0.5) | band |
+|---|---:|---:|---:|---:|
+| `sac_postsac_peak_short_noiseless` (immediate ring/glissade) | 4.4 | 1.73 | **1.11** | ≤1.0 |
+| `sac_postsac_peak_long_noiseless` (sustained tail) | 2.5 | 1.41 | **1.42** | ≤0.8 |
+| `sac_postsac_verg_peak_noiseless` (near-target vergence) | 5.37 | 5.37 | 5.37 | ≤1.5 |
 
-(This is *eye velocity*; cf. ~0.7 deg/s spurious *pursuit drive* for classic
+Companion saccade metrics at the adopted `mlf_lead=0.5` (all PASS): peak vel @20°
+**640**, `mainseq_resid` **0.159**, primary gain **0.986**, oblique straightness
+**0.014**, cascade count **1**, refractory ISI 316 ms.
+
+(Post-sac is *eye velocity*; cf. ~0.7 deg/s spurious *pursuit drive* for classic
 Robinson in plant_compensation.md — so the ring is plant-settling + EC residual
-combined, not just the drive.) The version ring fell 60%/44% from the
-`mn_ff_yaw` + `alpha_fac` changes below; both metrics are still above the
-"near-zero" target, and the vergence transient is untouched (it's the geometric
-near-response, not a motor defect — Decomp #4).
+combined, not just the drive.) The short ring fell 4.4 → 1.11 (the `mlf_lead=0.5`
+controller sweet spot, below — see "Side 1 SOLVED"); the long tail is unchanged
+(`mlf_lead` replaces the suppression gate at no cost). Both stay above the
+"near-zero" band — the irreducible piece is the cerebellar EC residual, not the
+controller. The vergence transient is untouched (geometric near-response, not a
+motor defect — Decomp #4).
 
 ## Established (don't re-derive)
 
@@ -323,3 +329,61 @@ return*, not the outward saccade. The metric now finds the outward saccade
 2·HOLD search window, then takes PCA curvature (no endpoint detection). Result
 0.029, obliques a clean symmetric ~2.9%. Filed here because "post-saccadic" lag
 in a rapid sequence is the same latency-vs-dwell budget issue.
+
+## Side 1 SOLVED (2026-06-26): mlf_lead=0.5 at the controller; suppression off
+
+The small-saccade post-saccadic drift (the one that contaminates pursuit) is the
+**SCENE/OKR-side EC residual**, not the pursuit loop. Decomposition (zero each
+visual path at a 2° saccade): opening OKN/VS collapses the NI drift 2.78 → 0.36;
+opening pursuit barely changes it (2.78 → 2.59). The pursuit *memory* stays ~0 —
+it leaks through the instantaneous **phasic feedthrough**, not the integrator.
+
+The residual is **~size-independent** (~5–6 deg/s un-suppressed: 5.4 at 2°, 6.2 at
+20°). That rules out the glissade (which scales with size) — it's a *systematic*
+EC prediction mismatch that survives `mn_ff_yaw=1.0`.
+
+**Root (controller fidelity, loops off):** the EC predicts the reafferent slip
+from the **sharp NI command**, but the actual eye is a **3–4 ms delayed, ~10%
+attenuated low-pass of the command** — the glissade lives *in* the saccade
+transient (neg→pos reversal, −54/+23 at 2°), and is ~0 only after settling (which
+is why earlier post-burst probes missed it). So the EC under-predicts the sensed
+slip (17 vs 22 at 2°) → the residual → the OKR drift.
+
+**The suppression was masking this, but is magnitude-graded** and so fails for
+small saccades: the gate is `_sat_flag(eye speed, v_max_okr)` fed through the
+retinal-delay cascade. A 2° saccade *does* exceed the threshold (peak ~175 > 160),
+but its flag pulse is brief and the cascade low-pass attenuates it → the delayed
+gate barely closes (`sat≈0.8` open) → reafference leaks. A 20° saccade's longer
+pulse survives → gate closes (`sat≈0.1`). The `_strengthen` knobs can force it
+shut but only by clamping the gate *between* catch-up saccades → pursuit gain
+0.96→0.32. Dead end.
+
+**CORRECTION to Decomp #6** (important): the claim "mlf_lead worsens the
+post-saccadic ring" was measured with the visual loops ON — that ring was the
+**loop** (the EC residual feeding back), NOT the controller. At the pure-controller
+level (loops + suppression off) `mlf_lead` does **not** ring: 0.14 for mlf 0 and 1
+alike. Verified after user pushback.
+
+**The fix — `mlf_lead=0.5`, the EC-residual sweet spot.** Post-sac ring vs
+`mlf_lead` (suppression OFF) is **V-shaped, min at ~0.5**: the residual is smallest
+where the controller's *actual* eye-motion shape best matches the EC's command
+prediction (mlf_lead=1 over-leads and re-grows it). Ring across sizes (supp off):
+
+| amp | mlf=0 | mlf=0.5 | mlf=1.0 |
+|---|---:|---:|---:|
+| 2° | 3.38 | **0.98** | 1.79 |
+| 5° | 1.29 | **0.21** | 1.35 |
+| 10° | 0.99 | **0.43** | 1.86 |
+| 20° | 0.96 | **0.67** | 2.31 |
+
+All ≤ 1.0 at 0.5, and barely different with suppression on (5°: 0.18 vs 0.21) —
+so **the suppression is now unnecessary.** And the main sequence *improves*: peak
+velocity @20° 627→642 (toward the 700-curve), `mainseq_resid` 0.221→0.163,
+#saccades stays 1, oblique curvature 0.029→0.014.
+
+**Adopted:** `mlf_lead=0.5` (default) + `saccadic_suppression_steepness=0` (gate
+disabled, kept as a knob). This fixes Side 1 **at the source** — no EC plant
+filter, no symptom-masking gate. The suppression may return later inside a
+**probabilistic EC** (scene + target + efference combined). The earlier Side-1
+plan (EC internal plant estimate, Decomp #5) is superseded: the controller was the
+fixable source, not the EC prediction.

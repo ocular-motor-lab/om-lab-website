@@ -588,16 +588,53 @@ async function loadFeatured(runId, prompt) {
 // interstitial instead of the PNG. Cached by URL so gallery re-renders (search)
 // don't refetch or leak object URLs. Hides the element if the image is missing.
 const _thumbCache = {};
+const THUMB_W = 360;   // downscale target (px): bigger than any card, small enough to merge hairlines
+
+function _loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const im = new Image();
+    im.onload = () => resolve(im);
+    im.onerror = reject;
+    im.src = src;
+  });
+}
+
+// High-quality stepped downscale. The plots are hairline (1px) traces; letting the
+// browser shrink the full PNG to ~96px in one resample drops pixels and leaves gaps.
+// Halving repeatedly with smoothing averages each line into a continuous soft stroke
+// that survives, then a final step lands on the target width. Drawing from a fetched
+// blob keeps the canvas un-tainted, so toDataURL works cross-origin.
+function _downscaleThumb(img, targetW) {
+  let w = img.naturalWidth, h = img.naturalHeight, cv;
+  cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  cv.getContext('2d').drawImage(img, 0, 0);
+  const shrink = (nw, nh) => {
+    const nx = document.createElement('canvas'); nx.width = nw; nx.height = nh;
+    const cx = nx.getContext('2d');
+    cx.imageSmoothingEnabled = true; cx.imageSmoothingQuality = 'high';
+    cx.drawImage(cv, 0, 0, nw, nh);
+    cv = nx; w = nw; h = nh;
+  };
+  while (w > targetW * 2) shrink(Math.round(w / 2), Math.round(h / 2));
+  if (w > targetW) shrink(targetW, Math.round(h * targetW / w));
+  return cv.toDataURL('image/png');
+}
+
 async function setThumb(imgEl, url) {
   if (_thumbCache[url]) { imgEl.src = _thumbCache[url]; return; }
+  let objUrl;
   try {
     const resp = await fetch(url, { headers: { 'ngrok-skip-browser-warning': 'true' } });
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    const obj = URL.createObjectURL(await resp.blob());
-    _thumbCache[url] = obj;
-    imgEl.src = obj;
+    objUrl = URL.createObjectURL(await resp.blob());
+    const img = await _loadImage(objUrl);
+    const thumb = img.naturalWidth > THUMB_W ? _downscaleThumb(img, THUMB_W) : objUrl;
+    _thumbCache[url] = thumb;
+    imgEl.src = thumb;
+    if (thumb !== objUrl) URL.revokeObjectURL(objUrl);   // dataURL cached; raw blob no longer needed
   } catch (e) {
-    imgEl.style.display = 'none';
+    if (objUrl) { _thumbCache[url] = objUrl; imgEl.src = objUrl; return; }   // downscale failed → raw PNG
+    imgEl.style.display = 'none';                                            // fetch failed → hide
   }
 }
 

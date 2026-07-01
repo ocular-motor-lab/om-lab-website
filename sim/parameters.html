@@ -84,7 +84,7 @@ tr:last-child { border-bottom: none; }
     <a href="#brainparams">BrainParams</a>
     <a href="#brainparams-self_motion_estimation" style="padding-left:32px;font-size:11px;color:#aaa">Self Motion Estimation <span style="color:#666">(18)</span></a>
     <a href="#brainparams-neural_integrator" style="padding-left:32px;font-size:11px;color:#aaa">Neural Integrator <span style="color:#666">(7)</span></a>
-    <a href="#brainparams-ungrouped" style="padding-left:32px;font-size:11px;color:#aaa">Ungrouped <span style="color:#666">(19)</span></a>
+    <a href="#brainparams-ungrouped" style="padding-left:32px;font-size:11px;color:#aaa">Ungrouped <span style="color:#666">(20)</span></a>
     <a href="#brainparams-binocular" style="padding-left:32px;font-size:11px;color:#aaa">Binocular <span style="color:#666">(5)</span></a>
     <a href="#brainparams-saccade_generator" style="padding-left:32px;font-size:11px;color:#aaa">Saccade Generator <span style="color:#666">(29)</span></a>
     <a href="#brainparams-listing" style="padding-left:32px;font-size:11px;color:#aaa">Listing <span style="color:#666">(2)</span></a>
@@ -106,6 +106,7 @@ tr:last-child { border-bottom: none; }
     <div style="height:8px"></div>
     <a href="#plantparams">PlantParams</a>
     <a href="#plantparams-plant" style="padding-left:32px;font-size:11px;color:#aaa">Plant <span style="color:#666">(3)</span></a>
+    <a href="#plantparams-ungrouped" style="padding-left:32px;font-size:11px;color:#aaa">Ungrouped <span style="color:#666">(1)</span></a>
     <div style="border-top:1px solid #2a2a4e;margin:18px 12px 8px;"></div>
     <h2>Other pages</h2>
     <a href="benchmarks/">Benchmarks</a>
@@ -115,16 +116,16 @@ tr:last-child { border-bottom: none; }
   <main>
     <h1>ViSiOMlab — Parameter Reference</h1>
     <p class="meta">
-      Generated: <strong>2026-06-25 08:18</strong> &nbsp;|&nbsp;
-      Version: <strong>9877e87-dirty</strong> &nbsp;|&nbsp;
+      Generated: <strong>2026-06-30 21:31</strong> &nbsp;|&nbsp;
+      Version: <strong>3a161a2-dirty</strong> &nbsp;|&nbsp;
       Schema: <strong>D:\OneDrive\UC Berkeley\OMlab - JOM\Code\ClaudeOculomotorJax\src\oculomotor\schema\parameters_schema.yaml</strong>
     </p>
     <input id="search" type="search" placeholder="Search parameters by name, description, anatomy, disorder…" autofocus>
     <div id="match-count" class="match-count"></div>
-    <div class="warning"><b>22 fields lack schema entries</b> and are flagged TODO below. Add to <code>oculomotor/schema/parameters_schema.yaml</code> to provide rich descriptions, anatomy, and disorder tags.</div>
+    <div class="warning"><b>24 fields lack schema entries</b> and are flagged TODO below. Add to <code>oculomotor/schema/parameters_schema.yaml</code> to provide rich descriptions, anatomy, and disorder tags.</div>
     
   <section class="section" id="brainparams">
-    <h2>BrainParams <small style="font-size:12px;font-weight:400;color:#888">(124 fields)</small></h2>
+    <h2>BrainParams <small style="font-size:12px;font-weight:400;color:#888">(125 fields)</small></h2>
     <p class="desc">Central neural model parameters — VS, NI, SG, gravity, vergence, accommodation, T-VOR, OCR, CN/MLF gains. Read by every brain submodule's <code>step()</code>.</p>
     
     <div class="subsection" id="brainparams-self_motion_estimation">
@@ -410,7 +411,7 @@ tr:last-child { border-bottom: none; }
     </div>
 
     <div class="subsection" id="brainparams-ungrouped">
-      <h3>Ungrouped <small style="font-size:11px;font-weight:400;color:#888">(19 fields)</small></h3>
+      <h3>Ungrouped <small style="font-size:11px;font-weight:400;color:#888">(20 fields)</small></h3>
       <table class="param-table">
         <thead><tr>
           <th style="width:160px">Parameter</th>
@@ -422,6 +423,16 @@ tr:last-child { border-bottom: none; }
           <th style="width:200px">Disorders / notable values</th>
         </tr></thead>
         <tbody>
+        <tr>
+          <td class="param-name">tau_muscle<span class="todo">TODO: enrich schema</span></td>
+          <td><span class="default">0.013</span></td>
+          <td class="units"></td>
+          <td class="range-cell"></td>
+          <td class="desc-cell"><p>muscle fast-pole TC copy (τ₂, s) — 2nd-order plant inverse (muscle force-development LP); matches PlantParams.tau_muscle</p></td>
+          <td class="anatomy-cell"></td>
+          <td></td>
+        </tr>
+
         <tr>
           <td class="param-name">tau_vis_sharp<span class="todo">TODO: enrich schema</span></td>
           <td><span class="default">0.05</span></td>
@@ -574,10 +585,10 @@ tr:last-child { border-bottom: none; }
 
         <tr>
           <td class="param-name">saccadic_suppression_steepness<span class="todo">TODO: enrich schema</span></td>
-          <td><span class="default">1.5</span></td>
+          <td><span class="default">0</span></td>
           <td class="units"></td>
           <td class="range-cell"></td>
-          <td class="desc-cell"><p>power applied to thresholded gate 1.0 = transparent (ceiling >> normal burst); <1 = conduction block Nerve order: [LR_L,MR_L,SR_L,IR_L,SO_L,IO_L, LR_R,MR_R,SR_R,IR_R,SO_R,IO_R] INO: g_nerve[MR_L or MR_R] ↓  →  adducting saccades slow, fixation preserved CN6: g_nerve[LR_L or LR_R] ↓  →  abduction limited</p></td>
+          <td class="desc-cell"><p>0 DISABLES the gate (raw**0 = 1, fully open); was 1.5. With mlf_lead=0.5 the EC residual is small enough that suppression is unnecessary — and the gate was magnitude- graded, under-suppressing small saccades anyway. Kept as a knob; a future probabilistic EC (scene+target+efference) may reinstate it. >0 re-enables (power on thresholded gate). 1.0 = transparent (ceiling >> normal burst); <1 = conduction block Nerve order: [LR_L,MR_L,SR_L,IR_L,SO_L,IO_L, LR_R,MR_R,SR_R,IR_R,SO_R,IO_R] INO: g_nerve[MR_L or MR_R] ↓  →  adducting saccades slow, fixation preserved CN6: g_nerve[LR_L or LR_R] ↓  →  abduction limited</p></td>
           <td class="anatomy-cell"></td>
           <td></td>
         </tr>
@@ -1492,7 +1503,7 @@ tr:last-child { border-bottom: none; }
 
         <tr>
           <td class="param-name">mlf_lead</td>
-          <td><span class="default">0</span></td>
+          <td><span class="default">0.5</span></td>
           <td class="units">—</td>
           <td class="range-cell">[0, 1]</td>
           <td class="desc-cell"><p>Per-eye MLF feedforward lead in the FCP, 0–1.  0 (default, dormant) = pure version drive; 1 = full monocular compensation of the adducting eye's extra MR conduction stage (AIN→MLF→CN3-MR).  A legitimate per-eye knob (e.g. INO modelling) but not the post-saccadic lever — it trades the onset velocity gap for a larger settling ring (Decomp #4/#6, post_saccadic_motion.md).</p></td>
@@ -1878,7 +1889,7 @@ tr:last-child { border-bottom: none; }
   </section>
     
   <section class="section" id="plantparams">
-    <h2>PlantParams <small style="font-size:12px;font-weight:400;color:#888">(3 fields)</small></h2>
+    <h2>PlantParams <small style="font-size:12px;font-weight:400;color:#888">(4 fields)</small></h2>
     <p class="desc">Extraocular plant — mechanical orbit dynamics.</p>
     
     <div class="subsection" id="plantparams-plant">
@@ -1921,6 +1932,32 @@ tr:last-child { border-bottom: none; }
           <td class="range-cell"></td>
           <td class="desc-cell"><p>Sigmoid steepness for the orbital-limit gate; controls how sharply the velocity-clip kicks in near ±orbital_limit.</p></td>
           <td class="anatomy-cell">Orbital wall sigmoid steepness</td>
+          <td></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="subsection" id="plantparams-ungrouped">
+      <h3>Ungrouped <small style="font-size:11px;font-weight:400;color:#888">(1 field)</small></h3>
+      <table class="param-table">
+        <thead><tr>
+          <th style="width:160px">Parameter</th>
+          <th style="width:90px">Default</th>
+          <th style="width:60px">Units</th>
+          <th style="width:110px">Valid range</th>
+          <th>Description</th>
+          <th style="width:170px">Anatomical locus</th>
+          <th style="width:200px">Disorders / notable values</th>
+        </tr></thead>
+        <tbody>
+        <tr>
+          <td class="param-name">tau_muscle<span class="todo">TODO: enrich schema</span></td>
+          <td><span class="default">0.013</span></td>
+          <td class="units"></td>
+          <td class="range-cell"></td>
+          <td class="desc-cell"><p>muscle fast pole τ₂ (s) — force-development LP (2nd-order plant). Ignored by the 1st-order plant; used by plant_model_second_order.</p></td>
+          <td class="anatomy-cell"></td>
           <td></td>
         </tr>
         </tbody>

@@ -44,6 +44,17 @@ h1   { font-size: 22px; margin-bottom: 4px; }
 .banner     { background: #fff3cd; border: 1px solid #ffc107;
               padding: 10px 16px; border-radius: 6px; margin-bottom: 24px;
               font-size: 13px; color: #856404; }
+.fig-pair       { display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+                  align-items: start; }
+.fig-pair .lbl  { font-size: 10px; color: #888; text-transform: uppercase;
+                  letter-spacing: 0.04em; margin: 0 0 2px 2px; }
+.diff-badge     { display: inline-block; padding: 2px 8px; border-radius: 12px;
+                  font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
+                  text-transform: uppercase; margin-bottom: 6px; margin-right: 6px; }
+.diff-match     { background: #d4edda; color: #155724; }
+.diff-changed   { background: #f8d7da; color: #721c24; }
+.diff-shape     { background: #fff3cd; color: #856404; }
+.diff-noref     { background: #e2e3e5; color: #383d41; }
 </style>
 </head>
 <body>
@@ -58,8 +69,8 @@ h1   { font-size: 22px; margin-bottom: 4px; }
   <main>
     <h1>ViSiOMlab — Clinical Benchmarks</h1>
     <p class="meta">
-      Generated: <strong>2026-05-03 22:00</strong> &nbsp;|&nbsp;
-      Version: <strong>c03bcf3-dirty</strong> &nbsp;|&nbsp;
+      Generated: <strong>2026-06-30 22:11</strong> &nbsp;|&nbsp;
+      Version: <strong>e07c6af-dirty</strong> &nbsp;|&nbsp;
       <a href="../../web/benchmarks/index.html">Normal Benchmarks</a>
     </p>
     <div class="banner">
@@ -73,6 +84,7 @@ h1   { font-size: 22px; margin-bottom: 4px; }
     <div class="fig-grid">
       
     <div class="fig-card">
+      <span class="diff-badge diff-noref">no reference</span>
       <a href="figures/clin_vest_spontaneous.png" target="_blank"><img src="figures/clin_vest_spontaneous.png" alt="Spontaneous Nystagmus — Dark vs Fixation Suppression"></a>
       <h3>Spontaneous Nystagmus — Dark vs Fixation Suppression</h3>
       <p class="desc">Left UVH (10% canal gain, tau_vs=10 s) vs VN infarct (tau_vs=5 s). Dark: spontaneous nystagmus driven by VN firing-rate asymmetry. Lit room with fixation target: scene and target both on; OKR and saccadic correction suppress nystagmus.</p>
@@ -85,6 +97,7 @@ h1   { font-size: 22px; margin-bottom: 4px; }
     </div>
 
     <div class="fig-card">
+      <span class="diff-badge diff-noref">no reference</span>
       <a href="figures/clin_vest_vhit.png" target="_blank"><img src="figures/clin_vest_vhit.png" alt="vHIT — Acute vs Chronic Left UVH (10% left canal gain)"></a>
       <h3>vHIT — Acute vs Chronic Left UVH (10% left canal gain)</h3>
       <p class="desc">150 deg/s half-sine impulse, left and right.  Scene absent, fixation target only. Acute UVH: b_lesion=85 (mild tonic imbalance, spontaneous nystagmus visible). Chronic UVH: b_lesion=100 (central compensation restored VN balance). Gain = regression of early SPV (first 60 ms) onto head velocity.</p>
@@ -97,6 +110,7 @@ h1   { font-size: 22px; margin-bottom: 4px; }
     </div>
 
     <div class="fig-card">
+      <span class="diff-badge diff-noref">no reference</span>
       <a href="figures/clin_vest_rotary_okn.png" target="_blank"><img src="figures/clin_vest_rotary_okn.png" alt="Rotary Chair (Dark) + OKN — SPV and VS State"></a>
       <h3>Rotary Chair (Dark) + OKN — SPV and VS State</h3>
       <p class="desc">Step rotation 60 deg/s × 20 s in dark, then post-rotatory nystagmus. Same temporal parameters for OKN/OKAN. Lesioned tau_vs (UVH=10 s, VN infarct=5 s) shortens post-rotatory TC. OKN/OKAN unaffected by peripheral vestibular lesion (VS driven by visual slip).</p>
@@ -116,6 +130,7 @@ h1   { font-size: 22px; margin-bottom: 4px; }
     <div class="fig-grid">
       
     <div class="fig-card">
+      <span class="diff-badge diff-noref">no reference</span>
       <a href="figures/clin_ni_gen.png" target="_blank"><img src="figures/clin_ni_gen.png" alt="Gaze-Evoked Nystagmus (GEN)"></a>
       <h3>Gaze-Evoked Nystagmus (GEN)</h3>
       <p class="desc">NI leak TC reduced: healthy 25 s → moderate 6 s → severe 2 s. Centripetal drift during eccentric gaze; corrective fast phases.</p>
@@ -128,6 +143,7 @@ h1   { font-size: 22px; margin-bottom: 4px; }
     </div>
 
     <div class="fig-card">
+      <span class="diff-badge diff-noref">no reference</span>
       <a href="figures/clin_ni_rebound.png" target="_blank"><img src="figures/clin_ni_rebound.png" alt="Rebound Nystagmus"></a>
       <h3>Rebound Nystagmus</h3>
       <p class="desc">NI null adaptation TC = 20 s. Hold 20° for 20 s, return to center. Null persists → rebound beats toward center.</p>
@@ -140,6 +156,7 @@ h1   { font-size: 22px; margin-bottom: 4px; }
     </div>
 
     <div class="fig-card">
+      <span class="diff-badge diff-noref">no reference</span>
       <a href="figures/clin_ni_alexander_law.png" target="_blank"><img src="figures/clin_ni_alexander_law.png" alt="Alexander's Law (UVH + GEN)"></a>
       <h3>Alexander's Law (UVH + GEN)</h3>
       <p class="desc">Left UVH + leaky NI (τ_i=3 s) + NI null adaptation (τ=15 s). Demonstrates Alexander's law: nystagmus amplitude larger when gazing in the fast-phase direction (rightward = contraversive for left UVH). NI null adaptation adds a rebound component when returning to center.</p>
@@ -152,6 +169,7 @@ h1   { font-size: 22px; margin-bottom: 4px; }
     </div>
 
     <div class="fig-card">
+      <span class="diff-badge diff-noref">no reference</span>
       <a href="figures/clin_ni_okan.png" target="_blank"><img src="figures/clin_ni_okan.png" alt="Extended OKAN / VS Null Adaptation"></a>
       <h3>Extended OKAN / VS Null Adaptation</h3>
       <p class="desc">VS null adaptation (τ_vs_adapt 600→60 s) prolongs OKAN. PAN would require inhibitory null coupling (future work).</p>
@@ -171,6 +189,7 @@ h1   { font-size: 22px; margin-bottom: 4px; }
     <div class="fig-grid">
       
     <div class="fig-card">
+      <span class="diff-badge diff-noref">no reference</span>
       <a href="figures/clin_cn_9positions.png" target="_blank"><img src="figures/clin_cn_9positions.png" alt="9 Positions of Gaze"></a>
       <h3>9 Positions of Gaze</h3>
       <p class="desc">Standard clinical 9-position gaze test. Each panel shows left (blue circles) and right (red squares) final eye positions after a saccade to each of the 9 standard fixation targets. Vertical or horizontal gaps between paired symbols reveal the duction deficit for each lesion.</p>
@@ -183,6 +202,20 @@ h1   { font-size: 22px; margin-bottom: 4px; }
     </div>
 
     <div class="fig-card">
+      <span class="diff-badge diff-noref">no reference</span>
+      <a href="figures/clin_cn_9positions_trajectories.png" target="_blank"><img src="figures/clin_cn_9positions_trajectories.png" alt="9 Positions of Gaze — trajectory grid"></a>
+      <h3>9 Positions of Gaze — trajectory grid</h3>
+      <p class="desc">Full eye-position trajectories for each (condition × target) pair. Solid traces are the (yaw, pitch) eye-position over time; the filled markers show the steady-state second-half mean used in the scatter plot. Useful for diagnosing closed-loop transients vs steady-state misalignment in non-physiological force balances (e.g. CN IV).</p>
+      <div class="expected">
+        <strong>Expected finding</strong>
+        Healthy: trajectories converge cleanly to each target. Lesion conditions: trajectories may oscillate or drift; CN IV in particular shows continuous closed-loop correction without true rest.
+      </div>
+      <p class="citation">&#128214; Same simulations as 9-positions scatter.</p>
+      <span class="badge behavior">behavior</span>
+    </div>
+
+    <div class="fig-card">
+      <span class="diff-badge diff-noref">no reference</span>
       <a href="figures/clin_cn_ino_timeseries.png" target="_blank"><img src="figures/clin_cn_ino_timeseries.png" alt="INO Saccade Trajectories"></a>
       <h3>INO Saccade Trajectories</h3>
       <p class="desc">Horizontal saccade position and velocity for healthy, left INO, right INO, and bilateral INO. Left INO impairs left-eye adduction on rightward saccades; right INO impairs right-eye adduction on leftward saccades. Dashed = left eye; solid = right eye.</p>
@@ -195,6 +228,7 @@ h1   { font-size: 22px; margin-bottom: 4px; }
     </div>
 
     <div class="fig-card">
+      <span class="diff-badge diff-noref">no reference</span>
       <a href="figures/clin_cn_graded.png" target="_blank"><img src="figures/clin_cn_graded.png" alt="Graded CN VI and INO Recovery"></a>
       <h3>Graded CN VI and INO Recovery</h3>
       <p class="desc">Continuous ipsilateral (+20.0°) then contralateral (−20.0°) saccade. CN VI R nerve palsy (left): R (paretic) eye undershoots and slows. Left INO (right): L (adducting) eye lags and undershoots on rightward saccade. Both eyes on same axes; lit room, target present.</p>
@@ -214,6 +248,7 @@ h1   { font-size: 22px; margin-bottom: 4px; }
     <div class="fig-grid">
       
     <div class="fig-card">
+      <span class="diff-badge diff-noref">no reference</span>
       <a href="figures/clin_sac_slow.png" target="_blank"><img src="figures/clin_sac_slow.png" alt="Slow Saccades (Main Sequence Shift)"></a>
       <h3>Slow Saccades (Main Sequence Shift)</h3>
       <p class="desc">Main sequence curves (left, full height) and 20° saccade position + velocity traces (right, stacked) for three levels of burst-neuron ceiling (g_burst). Reduced g_burst models PPRF / IBN lesion.</p>
@@ -226,6 +261,7 @@ h1   { font-size: 22px; margin-bottom: 4px; }
     </div>
 
     <div class="fig-card">
+      <span class="diff-badge diff-noref">no reference</span>
       <a href="figures/clin_sac_flutter_swj.png" target="_blank"><img src="figures/clin_sac_flutter_swj.png" alt="Ocular Flutter and Square Wave Jerks"></a>
       <h3>Ocular Flutter and Square Wave Jerks</h3>
       <p class="desc">Static center fixation under healthy, flutter, and SWJ conditions. Flutter: OPN threshold set near zero → saccade generator oscillates continuously. SWJ: moderately relaxed threshold + retinal position noise → pairs of back-to-back saccades with the inter-saccadic fixation interval. Left column = position, right = velocity.</p>
@@ -245,6 +281,7 @@ h1   { font-size: 22px; margin-bottom: 4px; }
     <div class="fig-grid">
       
     <div class="fig-card">
+      <span class="diff-badge diff-noref">no reference</span>
       <a href="figures/cover_test_phoria.png" target="_blank"><img src="figures/cover_test_phoria.png" alt="Cover Test — Phoria Detection"></a>
       <h3>Cover Test — Phoria Detection</h3>
       <p class="desc">3 rows × 3 cols. L eye occluded during shaded period (target_present_L = 0). Cols: exophoria (tonic=0°), normal (tonic≈3.7°), esophoria (tonic=9°). Rows 0–1: vergence at far (3 m) and near (0.5 m); Row 2: per-eye yaw at near — covered L eye drifts, open R eye holds. Phoria angle = tonic_verg − geo_demand (positive=eso, negative=exo).</p>

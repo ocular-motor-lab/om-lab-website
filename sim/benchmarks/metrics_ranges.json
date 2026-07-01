@@ -79,6 +79,38 @@
     "cite": "Read (2022)",
     "desc": "Accommodation rise time constant (exp fit)"
   },
+  "fcp_gaze_amp": {
+    "lo": 27.0,
+    "hi": 33.0,
+    "golden_tol": 0.1,
+    "units": "deg",
+    "cite": "\u2014",
+    "desc": "Peak horizontal eye position at the 30\u00b0 gaze targets"
+  },
+  "fcp_nerve_pullonly_frac": {
+    "lo": 0.999,
+    "hi": null,
+    "golden_tol": 0.001,
+    "units": "frac",
+    "cite": "\u2014",
+    "desc": "Fraction of per-muscle nerve samples \u2265 0 \u2014 pull-only co-contraction invariant"
+  },
+  "fcp_verg_far": {
+    "lo": 0.3,
+    "hi": 2.5,
+    "golden_tol": 0.3,
+    "units": "deg",
+    "cite": "\u2014",
+    "desc": "Ocular vergence at far target (4 m; geometric 0.9\u00b0)"
+  },
+  "fcp_verg_near": {
+    "lo": 12.08839261708171,
+    "hi": 17.08839261708171,
+    "golden_tol": 0.2,
+    "units": "deg",
+    "cite": "\u2014",
+    "desc": "Ocular vergence at near target (0.25 m; geometric 14.6\u00b0)"
+  },
   "fix_drift_rms": {
     "lo": 0.02,
     "hi": 0.6,
